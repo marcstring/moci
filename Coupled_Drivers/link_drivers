@@ -84,12 +84,12 @@ def _run_drivers(common_env, mode, run_info):
         # namespace dictionary for exec function
         driver_name = '%s_driver' % model
         driver_mod = importlib.import_module(driver_name)
-        if model != 'mct':
-            model_envars, model_launch_cmd, run_info, model_snd_list \
-                = driver_mod.run_driver(envinsts['common'], mode, run_info)
-        else:
+        if model in ('obgc', 'mct'):
             model_envars, model_launch_cmd, run_info, model_snd_list \
                 = driver_mod.run_driver(envinsts, mode, run_info)
+        else:
+            model_envars, model_launch_cmd, run_info, model_snd_list \
+                = driver_mod.run_driver(envinsts['common'], mode, run_info)
         envinsts[model] = model_envars
         launchcmds.append(model_launch_cmd)
         if model_snd_list:
@@ -98,6 +98,15 @@ def _run_drivers(common_env, mode, run_info):
             else:
                 coupling_list = model_snd_list
         del driver_mod
+    # If running OBGC there are environment variables which are no longer
+    # needed.
+    if 'obgc' in envinsts['common']['models'] and 'nemo' in envinsts and \
+       envinsts['nemo']:
+        for var in ('history_nemo_nl', 'ln_restart', 'nemo_dump_time',
+                    'nemo_ndate0', 'nleapy', 'restart_ctl', 'tot_runlen_sec'):
+            if envinsts['nemo'].contains(var):
+                envinsts['nemo'].remove(var)
+
     return envinsts, launchcmds, run_info, coupling_list
 
 

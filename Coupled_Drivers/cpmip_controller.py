@@ -43,7 +43,7 @@ def get_allocated_cpus(cpmip_envar):
     Grab the allocated CPUs for all component models.
     Note that nodes array is only used for ARCHER2.
     '''
-    models = ['UM', 'JNR', 'NEMO', 'XIOS']
+    models = ['UM', 'JNR', 'NEMO', 'OBGC', 'XIOS']
     allocated_cpu = {}
     mpi_tasks = {}
     nodes = {}
@@ -112,9 +112,24 @@ def _update_namelists_for_metrics(common_env, cpmip_envar):
         assertion_string = 'To determine metrics for NEMO, we must be' \
                            ' running in a configuration that also includes' \
                            ' the UM'
-        assert ('um' in common_env['models']), assertion_string
-        cpmip_nemo.update_namelists_for_timing_nemo(cpmip_envar, nn_timing_val)
+        # It's now possible to have no UM - marc 4/4/23
+        #assert ('um' in common_env['models']), assertion_string
+        if 'um' not in common_env['models']:
+            # Just set to 1 for now - marc 4/4/23
+            nn_timing_val = 1
+        cpmip_nemo.update_namelists_for_timing_nemo('NEMO_NL', cpmip_envar,
+                                                    nn_timing_val)
 
+    # Update namelist for OBGC
+    if 'obgc' in common_env['models']:
+        # nn_timing_val needs to be set before getting here.
+        assertion_string = 'To determine metrics for OBGC, we must be ' \
+                           'running in a configuration which also includes ' \
+                           'either UM or NEMO'
+        assert('um' in common_env['models'] or 
+               'nemo' in common_env['models']), assertion_string
+        cpmip_nemo.update_namelists_for_timing_nemo('OBGC_NL', cpmip_envar,
+                                                    nn_timing_val)
 
 def _load_environment_variables(cpmip_envar):
     '''
@@ -200,8 +215,9 @@ def _finalize_cpmip_controller(common_env):
     um_cpus = cpus['UM']
     jnr_cpus = cpus['JNR']
     nemo_cpus = cpus['NEMO']
+    obgc_cpus = cpus['OBGC']
     xios_cpus = cpus['XIOS']
-    total_cpus = um_cpus + jnr_cpus + nemo_cpus + xios_cpus
+    total_cpus = um_cpus + jnr_cpus + nemo_cpus + obgc_cpus + xios_cpus
 
     # Time resources for UM
     if 'um' in common_env['models']:
@@ -228,6 +244,14 @@ def _finalize_cpmip_controller(common_env):
     else:
         cice_time = False
 
+    # OBGC time
+    if 'obgc' in common_env['models']:
+        obgc_time, obgc_coupling_time, obgc_put_time, _ = \
+            cpmip_nemo.get_nemo_info(nemo_timing_output='bgc_timing.output')
+        obgc_time /= obgc_cpus
+        obgc_coupling_time /= obgc_cpus
+        obgc_put_time /= obgc_cpus
+
     if cpmip_envar['COUPLED_PLATFORM'].lower() == 'ex':
         # Get the number of nodes from the -l PBS directives for each model.
         # These come in the same order they appear in the models environment
@@ -241,6 +265,7 @@ def _finalize_cpmip_controller(common_env):
         allocated_um = 0
         allocated_jnr = 0
         allocated_nemo = 0
+        allocated_obgc = 0
         allocated_xios = 0
         for i_model in common_env['models'].split():
             if i_model == 'cice':
@@ -251,6 +276,8 @@ def _finalize_cpmip_controller(common_env):
                 allocated_jnr = pbs_l_nodes.pop(0) * plat_cores_per_node
             elif i_model == 'nemo':
                 allocated_nemo = pbs_l_nodes.pop(0) * plat_cores_per_node
+            elif i_model == 'obgc':
+                allocated_obgc = pbs_l_nodes.pop(0) * plat_cores_per_node
             elif i_model == 'xios':
                 allocated_xios = pbs_l_nodes.pop(0) * plat_cores_per_node
 
@@ -262,6 +289,7 @@ def _finalize_cpmip_controller(common_env):
         allocated_um = 0
         allocated_jnr = 0
         allocated_nemo = 0
+        allocated_obgc = 0
         allocated_xios = 0
         for i_model in common_env['models'].split():
             if i_model == 'cice':
@@ -278,6 +306,10 @@ def _finalize_cpmip_controller(common_env):
                 number_nodes += nodes['NEMO']
                 allocated_nemo = nodes['NEMO'] * plat_cores_per_node
                 allocated_cpus += allocated_nemo
+            elif i_model == 'obgc':
+                number_nodes += nodes['OBGC']
+                allocated_obgc = nodes['OBGC'] * plat_cores_per_node
+                allocated_cpus += allocated_obgc
             elif i_model == 'xios':
                 number_nodes += nodes['XIOS']
                 allocated_xios = nodes['XIOS'] * plat_cores_per_node
@@ -303,6 +335,8 @@ def _finalize_cpmip_controller(common_env):
                 jnr_cpus/float(plat_cores_per_node))) * plat_cores_per_node
             allocated_nemo = int(math.ceil(
                 nemo_cpus/float(plat_cores_per_node))) * plat_cores_per_node
+            allocated_obgc = int(math.ceil(
+                obgc_cpus/float(plat_cores_per_node))) * plat_cores_per_node
             allocated_xios = int(math.ceil(
                 xios_cpus/float(plat_cores_per_node))) * plat_cores_per_node
         elif int(cpmip_envar['PPN']) > 0:
@@ -316,6 +350,8 @@ def _finalize_cpmip_controller(common_env):
                 jnr_cpus/float(plat_cores_per_node))) * plat_cores_per_node
             allocated_nemo = int(math.ceil(
                 nemo_cpus/float(plat_cores_per_node))) * plat_cores_per_node
+            allocated_obgc = int(math.ceil(
+                obgc_cpus/float(plat_cores_per_node))) * plat_cores_per_node
             allocated_xios = int(math.ceil(
                     xios_cpus/float(plat_cores_per_node))) * plat_cores_per_node
         else:
@@ -325,8 +361,8 @@ def _finalize_cpmip_controller(common_env):
             allocated_um = um_cpus
             allocated_jnr = jnr_cpus
             allocated_nemo = nemo_cpus
+            allocated_obgc = obgc_cpus
             allocated_xios = xios_cpus
-
 
     # Calculate the CPMIP coupling metric. This provides a fractional value
     # of the resource wasted. We assume that we can encapuslate the resource
@@ -353,9 +389,12 @@ def _finalize_cpmip_controller(common_env):
     else:
         nemo_resource = 0
         xios_resource = 0
+    if 'obgc' in common_env['models']:
+        obgc_resource = float(allocated_obgc * obgc_time)
 
     coupling_metric = (total_resource - um_resource - jnr_resource
-                       - nemo_resource - xios_resource) / total_resource
+                       - nemo_resource - obgc_resource -
+                       xios_resource) / total_resource
 
     # Run in years per day (as measured by the time spent in the launcher)
     years_run = cpmip_utils.tasklength_to_years(cpmip_envar['TASKLENGTH'])
@@ -385,6 +424,11 @@ def _finalize_cpmip_controller(common_env):
                 ' NEMO coupling code: %i s\n   Time in NEMO put code: ' \
                 '%i s\n' % ((nemo_time+0.5), (nemo_coupling_time+0.5),
                             (nemo_put_time+0.5))
+    if 'obgc' in common_env['models']:
+        obgc_time_message = 'Time in OBGC model code: %i s\nTime in' \
+                ' OBGC coupling code: %i s\n   Time in OBGC put code: ' \
+                '%i s\n' % ((obgc_time+0.5), (obgc_coupling_time+0.5),
+                            (obgc_put_time+0.5))
     ypd_message = 'This equates to %.2f years per day run (SYPD)\n' % \
         years_per_day
 
@@ -427,6 +471,14 @@ def _finalize_cpmip_controller(common_env):
             nemo_io_frac_mess = 'NEMO spends %i s performing IO\n   This' \
                 ' is a fraction of %.2f\n' % (nemo_io_time, nemo_io_frac)
 
+        # Determine for OBGC
+        if 'obgc' in common_env['models']:
+            obgc_io_time = cpmip_obgc.get_obgc_io()
+            obgc_io_time /= obgc_cpus
+            obgc_io_frac = float(obgc_io_time) / float(obgc_time)
+            obgc_io_frac_mess = 'OBGC spends %i s performing IO\n   This' \
+                ' is a fraction of %.2f\n' % (obgc_io_time, obgc_io_frac)
+
         # Determine XIOS client
         if 'xios' in common_env['models']:
             xios_client_mean, xios_client_max \
@@ -438,6 +490,7 @@ def _finalize_cpmip_controller(common_env):
         um_io_frac_mess = ''
         jnr_io_frac_mess = ''
         nemo_io_frac_mess = ''
+        obgc_io_frac_mess = ''
         xios_io_mess = ''
 
     if cpmip_envar['DATA_INTENSITY'] in ('true', 'True'):
@@ -483,6 +536,8 @@ def _finalize_cpmip_controller(common_env):
         sys.stdout.write(jnr_time_message)
     if 'nemo' in common_env['models']:
         sys.stdout.write(nemo_time_message)
+    if 'obgc' in common_env['models']:
+        sys.stdout.write(obgc_time_message)
     if xios_cpus:
         sys.stdout.write('It is assumed that XIOS takes the same time as '
                          'the time spent in the MPI launcher\n')
@@ -497,6 +552,9 @@ def _finalize_cpmip_controller(common_env):
     if 'nemo' in common_env['models']:
         sys.stdout.write('  NEMO Resource %.2f\n' %
                          (nemo_resource * secs_to_hours,))
+    if 'obgc' in common_env['models']:
+        sys.stdout.write('  OBGC Resource %.2f\n' %
+                         (obgc_resource * secs_to_hours,))
     if xios_cpus:
         sys.stdout.write('  XIOS Resource %.2f\n' %
                          (xios_resource * secs_to_hours,))
@@ -516,6 +574,8 @@ def _finalize_cpmip_controller(common_env):
         sys.stdout.write('\n%s' % nemo_io_frac_mess)
         sys.stdout.write('\n%s' % xios_io_mess)
         sys.stdout.write('%s\n' % ('-'*80,))
+    if 'obgc' in common_env['models']:
+        sys.stdout.write('\n%s' % obgc_io_frac_mess)
 
     # Write an output file containing runtime and processor number information
     # gleaned from the model output file to enable further analysis on this
@@ -531,6 +591,8 @@ def _finalize_cpmip_controller(common_env):
             cpmip_f.write('%s' % jnr_time_message)
         if 'nemo' in common_env['models']:
             cpmip_f.write('%s' % nemo_time_message)
+        if 'obgc' in common_env['models']:
+            cpmip_f.write('%s' % obgc_time_message)
         cpmip_f.write('%s%s%s' % (ypd_message, chsy_message,
                                   coupling_metric_message))
         if 'um' in common_env['models']:
@@ -540,6 +602,8 @@ def _finalize_cpmip_controller(common_env):
         if 'nemo' in common_env['models']:
             cpmip_f.write(nemo_io_frac_mess)
             cpmip_f.write(xios_io_mess)
+        if 'obgc' in common_env['models']:
+            cpmip_f.write(obgc_io_frac_mess)
         cpmip_f.write(data_intensity_msg)
         if 'um' in common_env['models']:
             cpmip_f.write('UM Processors: %i\n' % um_cpus)
@@ -550,6 +614,9 @@ def _finalize_cpmip_controller(common_env):
         if 'nemo' in common_env['models']:
             cpmip_f.write('NEMO Processors: %i\n' % nemo_cpus)
             cpmip_f.write('NEMO Available Processors: %i\n' % allocated_nemo)
+        if 'obgc' in common_env['models']:
+            cpmip_f.write('OBGC Processors: %i\n' % obgc_cpus)
+            cpmip_f.write('OBGC Available Processors: %i\n' % allocated_obgc)
         if xios_cpus:
             cpmip_f.write('XIOS Processors: %i\n' % xios_cpus)
             cpmip_f.write('XIOS Available Processors: %i\n' % allocated_xios)

@@ -254,14 +254,15 @@ def _setup_top_controller(common_env, restart_ctl, nemo_nproc, runid,
 
     elif os.path.isfile(latest_top_dump):
         # We have a valid restart file so we're not starting from climatology
-        # This could be a new run or a continutaion run.
+        # This could be a new run or a continuation run.
         top_dump_time = re.findall(r'_(\d*)_restart_trc', latest_top_dump)[0]
 
         if verify_restart == 'True':
             _verify_top_rst(nemo_dump_time, nemo_nproc, top_restart_files)
         if top_dump_time != nemo_dump_time:
-            sys.stderr.write('[FAIL] top_controller: Mismatch in TOP restart '
-                             'file date %s and NEMO restart file date %s\n'
+            sys.stderr.write('[FAIL] top_controller: Mismatch in TOP '
+                             'restart file date %s and NEMO restart '
+                             'file date %s\n'
                              % (top_dump_time, nemo_dump_time))
             sys.exit(error.MISMATCH_RESTART_DATE_ERROR)
 

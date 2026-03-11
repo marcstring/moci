@@ -45,11 +45,12 @@ def _read_data(datafile):
     a component, and the third containing the time spent in the coupling
     routines of the component models.
     '''
-    timing_data = {'LAUNCHER': 0, 'NEMO': 0, 'UM': 0, 'CICE': 0, 'Jnr': 0}
-    processors = {'UM': 0, 'Jnr': 0, 'XIOS': 0, 'NEMO': 0}
-    available_processors = {'UM': 0, 'Jnr': 0, 'XIOS': 0, 'NEMO': 0}
-    coupling_data = {'UM': 0, 'Jnr': 0, 'NEMO': 0}
-    put_data = {'UM': 0, 'Jnr': 0, 'NEMO': 0}
+    timing_data = {'LAUNCHER': 0, 'NEMO': 0, 'UM': 0, 'CICE': 0, 'Jnr': 0,
+                   'OBGC': 0}
+    processors = {'UM': 0, 'Jnr': 0, 'XIOS': 0, 'NEMO': 0, 'OBGC': 0}
+    available_processors = {'UM': 0, 'Jnr': 0, 'XIOS': 0, 'NEMO': 0, 'OBGC': 0}
+    coupling_data = {'UM': 0, 'Jnr': 0, 'NEMO': 0, 'OBGC': 0}
+    put_data = {'UM': 0, 'Jnr': 0, 'NEMO': 0, 'OBGC': 0}
     if not os.path.isfile(datafile):
         sys.stderr.write('Can not find data file %s\n' % datafile)
         sys.exit(999)
@@ -67,6 +68,8 @@ def _read_data(datafile):
                     timing_data['Jnr'] = int(match.group(1))
                 if 'NEMO' in line:
                     timing_data['NEMO'] = int(match.group(1))
+                if 'OBGC' in line:
+                    timing_data['OBGC'] = int(match.group(1))
             if 'Time' in line and 'coupling code' in line:
                 if 'UM' in line:
                     coupling_data['UM'] = int(match.group(1))
@@ -74,6 +77,8 @@ def _read_data(datafile):
                     coupling_data['Jnr'] = int(match.group(1))
                 if 'NEMO' in line:
                     coupling_data['NEMO'] = int(match.group(1))
+                if 'OBGC' in line:
+                    coupling_data['OBGC'] = int(match.group(1))
             if 'Time' in line and 'put code' in line:
                 if 'UM' in line:
                     put_data['UM'] = int(match.group(1))
@@ -81,6 +86,8 @@ def _read_data(datafile):
                     put_data['Jnr'] = int(match.group(1))
                 if 'NEMO' in line:
                     put_data['NEMO'] = int(match.group(1))
+                if 'OBGC' in line:
+                    put_data['OBGC'] = int(match.group(1))
             if 'Processors' in line and 'Available' not in line:
                 if 'XIOS' in line:
                     processors['XIOS'] = int(match.group(1))
@@ -90,6 +97,8 @@ def _read_data(datafile):
                     processors['Jnr'] = int(match.group(1))
                 if 'NEMO' in line:
                     processors['NEMO'] = int(match.group(1))
+                if 'OBGC' in line:
+                    processors['OBGC'] = int(match.group(1))
             if 'Processors' in line and 'Available' in line:
                 if 'XIOS' in line:
                     available_processors['XIOS'] = int(match.group(1))
@@ -99,6 +108,8 @@ def _read_data(datafile):
                     available_processors['Jnr'] = int(match.group(1))
                 if 'NEMO' in line:
                     available_processors['NEMO'] = int(match.group(1))
+                if 'OBGC' in line:
+                    available_processors['OBGC'] = int(match.group(1))
             if 'allocated CPUS' in line:
                 allocated_match = re.search(r'\(\d+/(\d+)\)', line)
                 allocated_processors = int(allocated_match.group(1))
@@ -106,7 +117,7 @@ def _read_data(datafile):
     # If the avaliable processors are 0, but the model is being used, we
     # must set avalaible processors to the number of processors used to ensure
     # the plotting works correctly
-    for model_component in ('UM', 'Jnr', 'XIOS', 'NEMO'):
+    for model_component in ('UM', 'Jnr', 'XIOS', 'NEMO', 'OBGC'):
         if not available_processors[model_component]:
             available_processors[model_component] = processors[model_component]
 
@@ -169,18 +180,30 @@ def plot_summary(model_time, coupling_time, put_time, nproc, avail_nproc,
                                               nproc['NEMO'], model_time['CICE'],
                                               color='0.75',
                                               label='CICE model'))
+    #OBGC
+    if model_time['OBGC']:
+        axis_secs.add_patch(patches.Rectangle((avail_nproc['UM'] +
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['NEMO'],
+                                               0),
+                                              nproc['OBGC'],
+                                              model_time['OBGC'],
+                                              color='darkorange',
+                                              label='OBGC model'))
 
     #XIOS
     if nproc['XIOS']:
         axis_secs.add_patch(patches.Rectangle((avail_nproc['NEMO'] +
                                                avail_nproc['UM'] +
-                                               avail_nproc['Jnr'], 0),
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['OBGC'], 0),
                                               nproc['XIOS'],
                                               model_time['LAUNCHER'],
                                               color='red',
                                               label='XIOS'))
     #Overheads
-    if coupling_time['UM'] or coupling_time['Jnr'] or coupling_time['NEMO']:
+    if coupling_time['UM'] or coupling_time['Jnr'] or \
+       coupling_time['NEMO'] or coupling_time['OBGC']:
         overheads_label = 'Overheads (LAUNCHER)'
     else:
         overheads_label = 'Overheads (LAUNCHER/Coupling)'
@@ -208,6 +231,16 @@ def plot_summary(model_time, coupling_time, put_time, nproc, avail_nproc,
                                               nproc['NEMO'],
                                               model_time['LAUNCHER'] - \
                                                   model_time['NEMO'],
+                                              color='yellow'))
+    #Overheads OBGC
+    if model_time['OBGC']:
+        axis_secs.add_patch(patches.Rectangle((avail_nproc['UM'] +
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['NEMO'],
+                                               model_time['OBGC']),
+                                              nproc['OBGC'],
+                                              model_time['LAUNCHER'] - \
+                                                  model_time['OBGC'],
                                               color='yellow'))
 
     #Superimpose the coupling times if avaliable
@@ -280,6 +313,35 @@ def plot_summary(model_time, coupling_time, put_time, nproc, avail_nproc,
                                               coupling_time['NEMO'],
                                               color='lightblue',
                                               label='NEMO coupling'))
+    # OBGC
+    if put_time['OBGC']:
+        axis_secs.add_patch(patches.Rectangle((avail_nproc['UM'] +
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['NEMO'],
+                                               model_time['OBGC']),
+                                              nproc['OBGC'],
+                                              put_time['OBGC'],
+                                              color='darkorange',
+                                              label='OBGC cpl put'))
+        axis_secs.add_patch(patches.Rectangle((avail_nproc['UM'] +
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['NEMO'],
+                                               (model_time['OBGC'] +
+                                                put_time['OBGC'])),
+                                              nproc['OBGC'],
+                                              (coupling_time['OBGC'] -
+                                               put_time['OBGC']),
+                                              color='orange',
+                                              label='OBGC cpl init + get'))
+    elif coupling_time['OBGC']:
+        axis_secs.add_patch(patches.Rectangle((avail_nproc['UM'] +
+                                               avail_nproc['Jnr'] +
+                                               avail_nproc['NEMO'],
+                                               model_time['OBGC']),
+                                              nproc['OBGC'],
+                                              coupling_time['OBGC'],
+                                              color='navajowhite',
+                                              label='OBGC coupling'))
 
     #Plot the envelopes for each component if appropriate
     #UM
@@ -316,21 +378,36 @@ def plot_summary(model_time, coupling_time, put_time, nproc, avail_nproc,
                        [0, model_time['LAUNCHER']*1.05],
                        color='0')
 
+    if nproc['OBGC'] < avail_nproc['OBGC']:
+        axis_secs.add_patch(patches.Rectangle(
+            (avail_nproc['UM'] + avail_nproc['Jnr'] + nproc['NEMO'] +
+             nproc['OBGC'], 0),
+            avail_nproc['OBGC'] - nproc['OBGC'],
+            model_time['LAUNCHER'],
+            color='darkorange', alpha=0.1))
+        x_vert_line = avail_nproc['UM'] + avail_nproc['Jnr'] + \
+                      avail_nproc['NEMO'] + avail_nproc['OBGC']
+        axis_secs.plot([x_vert_line, x_vert_line],
+                       [0, model_time['LAUNCHER']*1.05],
+                       color='0')
+
     if nproc['XIOS'] < avail_nproc['XIOS']:
         axis_secs.add_patch(patches.Rectangle(
             (avail_nproc['UM'] + avail_nproc['Jnr'] + avail_nproc['NEMO']
-             + nproc['XIOS'], 0),
+             + nproc['OBGC'] + nproc['XIOS'], 0),
             avail_nproc['XIOS'] - nproc['XIOS'],
             model_time['LAUNCHER'],
             color='red', alpha=0.1))
         x_vert_line = avail_nproc['UM'] + avail_nproc['Jnr'] + \
-                      avail_nproc['NEMO'] + avail_nproc['XIOS']
+                      avail_nproc['NEMO'] + avail_nproc['OBGC'] + \
+                      avail_nproc['XIOS']
         axis_secs.plot([x_vert_line, x_vert_line],
                        [0, model_time['LAUNCHER']*1.05],
                        color='0')
 
     component_nproc = avail_nproc['UM'] + avail_nproc['Jnr'] + \
-                      avail_nproc['NEMO'] + avail_nproc['XIOS']
+                      avail_nproc['NEMO'] + avail_nproc['OBGC'] + \
+                      avail_nproc['XIOS']
     pylab.legend(loc='best')
     pylab.xlim([0, 1.2*(component_nproc)])
     pylab.ylim([0, 1.2*model_time['LAUNCHER']])

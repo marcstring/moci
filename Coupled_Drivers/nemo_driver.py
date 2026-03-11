@@ -74,7 +74,7 @@ def _check_nemonl(envar_container):
     else:
         return 0
 
-def _get_nemorst(nemo_nl_file):
+def get_nemorst(nemo_nl_file):
     '''
     Retrieve the nemo restart directory from the nemo namelist file
     '''
@@ -300,7 +300,7 @@ def _setup_executable(common_env):
 
     # Read restart from nemo namelist
     restart_direcs = []
-    nemo_rst = _get_nemorst(nemo_envar['NEMO_NL'])
+    nemo_rst = get_nemorst(nemo_envar['NEMO_NL'])
     if nemo_rst:
         restart_direcs.append(nemo_rst)
     icerst_rcode, icerst_val = common.exec_subproc([ \
@@ -807,6 +807,17 @@ def _setup_executable(common_env):
                                       nemo_dump_time,
                                       controller_mode)
 
+    # If running ocean biogeochemisty as a separate executables, store
+    # a number of variables which will be used by this executable.
+    if 'obgc' in common_env['models']:
+        nemo_envar['history_nemo_nl'] = history_nemo_nl
+        nemo_envar['ln_restart'] = ln_restart
+        nemo_envar['nemo_dump_time'] = nemo_dump_time
+        nemo_envar['nemo_ndate0'] = nemo_ndate0
+        nemo_envar['nleapy'] = nleapy
+        nemo_envar['restart_ctl'] = restart_ctl
+        nemo_envar['tot_runlen_sec'] = tot_runlen_sec
+
     return nemo_envar
 
 
@@ -950,7 +961,7 @@ def _sent_coupling_fields(nemo_envar, run_info):
 
 def write_ocean_out_to_stdout():
     '''
-    Write the contents of ocean.output to stnadard out
+    Write the contents of ocean.output to standard out
     '''
     # append the ocean output and solver stat file to standard out. Use an
     # iterator to read the files, incase they are too large to fit into
@@ -1002,7 +1013,7 @@ def _finalize_executable(common_env):
     nemo_envar_fin = dr_env_lib.env_lib.LoadEnvar()
     nemo_envar_fin = dr_env_lib.env_lib.load_envar_from_definition(
         nemo_envar_fin, dr_env_lib.nemo_def.NEMO_ENVIRONMENT_VARS_FINAL)
-    nemo_rst = _get_nemorst(nemo_envar_fin['NEMO_NL'])
+    nemo_rst = get_nemorst(nemo_envar_fin['NEMO_NL'])
     if os.path.isdir(nemo_rst) and \
             os.path.isfile(nemo_envar_fin['NEMO_NL']):
         shutil.copy(nemo_envar_fin['NEMO_NL'], nemo_rst)

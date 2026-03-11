@@ -30,7 +30,8 @@ MODEL_COMPONENTS = {
                             'diaptr', 'trnd3d', 'scalar', 'isf-T',
                             'UK-shelf-T', 'UK-shelf-U', 'UK-shelf-V'],
                       ['', 'icebergs']),
-             'medusa': ('o', ['ptrc-T', 'diad-T', 'ptrd-T'], ['ptracer']),
+             'medusa': ('o', ['coarse', 'diad-T', 'ptrc-T', 'ptrd-T'],
+                        ['ptracer']),
              'si3': ('i', ['icemod'], ['ice'])},
     'cice': {'cice': ('i', '', ['', 'age'])},
     'unicicles': {'bisicles':

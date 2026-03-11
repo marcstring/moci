@@ -20,13 +20,15 @@ DESCRIPTION
 '''
 
 CPMIP_ENVIRONMENT_VARS_INITIAL = {
-    'VN': {},
+    'VN': {'default_val': 'VN99.9'},
     'models': {'desc': ('A space separated list of all the components in this'
                         ' run'),
                'triggers': [[lambda my_val: 'nemo' in my_val, ['NEMO_NL']],
+                            [lambda my_val: 'obgc' in my_val, ['OBGC_NL']],
                             [lambda my_val: 'jnr' in my_val, ['RUNID_JNR']]]},
     'RUNID_JNR': {},
     'NEMO_NL': {'default_val': 'namelist_cfg'},
+    'OBGC_NL': {'default_val': 'namelist_bgc_cfg'},
     'IO_COST': {'default_val': 'False'},
     'DATA_INTENSITY': {'default_val': 'False'},
     'PPN': {'default_val': '0'}}
@@ -50,7 +52,10 @@ CPMIP_ENVIRONMENT_VARS_FINAL = {
                             [lambda my_val: 'nemo' in my_val,
                              ['NEMO_NPROC', 'ROSE_LAUNCHER_PREOPTS_NEMO',
                               'ROSE_LAUNCHER_PREOPTS_XIOS', 'XIOS_NPROC',
-                              'NEMO_NL', 'CICE_ROW', 'CICE_COL']]]},
+                              'NEMO_NL', 'CICE_ROW', 'CICE_COL']],
+                            [lambda my_val: 'obgc' in my_val,
+                             ['OBGC_NPROC', 'ROSE_LAUNCHER_PREOPTS_OBGC',
+                              'OBGC_NL']]]},
     #UM related variables
     'UM_ATM_NPROCX': {},
     'UM_ATM_NPROCY': {},
@@ -72,6 +77,10 @@ CPMIP_ENVIRONMENT_VARS_FINAL = {
     'XIOS_NPROC': {'default_val': '0'},
     'CICE_ROW': {'default_val': '0'},
     'CICE_COL': {'default_val': '0'},
+    #OBGC related variables
+    'OBGC_NL': {'default_val': 'namelist_bgc_cfg'},
+    'OBGC_NPROC': {'desc': 'Number of OBGC processors'},
+    'ROSE_LAUNCHER_PREOPTS_OBGC': {},
     #Metric related variables
     'time_in_launcher': {},
     'TASKLENGTH': {},

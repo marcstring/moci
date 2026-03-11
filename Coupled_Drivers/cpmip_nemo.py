@@ -23,11 +23,11 @@ import common
 import error
 
 
-def update_namelists_for_timing_nemo(cpmip_envar, nn_timing_val):
+def update_namelists_for_timing_nemo(namelist, cpmip_envar, nn_timing_val):
     '''
     Update NEMO namelist to ensure that timers are running
     '''
-    mod_namelist_cfg = common.ModNamelist(cpmip_envar['NEMO_NL'])
+    mod_namelist_cfg = common.ModNamelist(cpmip_envar[namelist])
     mod_namelist_cfg.var_val('nn_timing', nn_timing_val)
     mod_namelist_cfg.replace()
 
@@ -47,53 +47,86 @@ def get_nemo_info(nemo_timing_output='timing.output'):
     # This searches for a time
     total_time_regex = re.compile(r"\s*Total\s*\|\s*(\d+.\d+)")
     # These regexes will pull out a percentage
-    sbc_cpl_rcv_regex = re.compile(r"\s*sbc_cpl_rcv\s*\d+.\d+\s*(\d+.\d+)")
-    sbc_cpl_init_regex = re.compile(r"\s*sbc_cpl_init\s*\d+.\d+\s*(\d+.\d+)")
-    sbc_cpl_snd_regex = re.compile(r"\s*sbc_cpl_snd\s*\d+.\d+\s*(\d+.\d+)")
-    sbc_ice_cice_regex = re.compile(r"\s*sbc_ice_cice\s*\d+.\d+\s*(\d+.\d+)")
+    sbc_cpl_rcv_regex = re.compile(
+        r"\s*sbc_cpl_rcv\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    sbc_cpl_init_regex = re.compile(
+        r"\s*sbc_cpl_init\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    sbc_cpl_snd_regex = re.compile(
+        r"\s*sbc_cpl_snd\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    sbc_ice_cice_regex = re.compile(
+        r"\s*sbc_ice_cice\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    dyn_cpl_rcv_regex = re.compile(
+        r"\s*dyn_cpl_rcv\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    dyn_cpl_init_regex = re.compile(
+        r"\s*dyn_cpl_init\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    dyn_cpl_snd_regex = re.compile(
+        r"\s*dyn_cpl_snd\s*\d+.[\dE+-]+\s*(\d+.\d+)")
+    proc0_timings_regex = re.compile(r"\s*Detailed\stiming\sfor\sproc\s:\s0")
 
     # Depending on the particular configuration we may not be able to determine
     # the time spent in CICE.
     cice_measurement = False
     # Zeroing the other timings in case they are not found.
-    rcv_percentge = 0.0
-    init_percentge = 0.0
-    snd_percentge = 0.0
+    rcv_percent1 = 0
+    rcv_percent2 = 0
+    init_percent1 = 0
+    init_percent2 = 0
+    snd_percent1 = 0
+    snd_percent2 = 0
     with common.open_text_file(nemo_timing_output, 'r') as nemo_timing_handle:
         for line in nemo_timing_handle.readlines():
             tot_match = total_time_regex.search(line)
-            cpl_rcv_match = sbc_cpl_rcv_regex.search(line)
-            cpl_init_match = sbc_cpl_init_regex.search(line)
-            cpl_snd_match = sbc_cpl_snd_regex.search(line)
+            sbc_cpl_rcv_match = sbc_cpl_rcv_regex.search(line)
+            sbc_cpl_init_match = sbc_cpl_init_regex.search(line)
+            sbc_cpl_snd_match = sbc_cpl_snd_regex.search(line)
             sbc_ice_cice_match = sbc_ice_cice_regex.search(line)
+            dyn_cpl_rcv_match = dyn_cpl_rcv_regex.search(line)
+            dyn_cpl_init_match = dyn_cpl_init_regex.search(line)
+            dyn_cpl_snd_match = dyn_cpl_snd_regex.search(line)
+            proc0_timings_match = proc0_timings_regex.search(line)
             if tot_match:
                 total_time = float(tot_match.group(1))
-            if cpl_rcv_match:
-                rcv_percentge = float(cpl_rcv_match.group(1))
-            if cpl_init_match:
-                init_percentge = float(cpl_init_match.group(1))
-            if cpl_snd_match:
-                snd_percentge = float(cpl_snd_match.group(1))
+            if sbc_cpl_rcv_match:
+                rcv_percent1 = float(sbc_cpl_rcv_match.group(1))
+            if sbc_cpl_init_match:
+                init_percent1 = float(sbc_cpl_init_match.group(1))
+            if sbc_cpl_snd_match:
+                snd_percent1 = float(sbc_cpl_snd_match.group(1))
             if sbc_ice_cice_match:
-                cice_percentage = float(sbc_ice_cice_match.group(1))
+                cice_percent = float(sbc_ice_cice_match.group(1))
                 cice_measurement = True
+            if dyn_cpl_rcv_match:
+                rcv_percent2 = float(dyn_cpl_rcv_match.group(1))
+            if dyn_cpl_init_match:
+                init_percent2 = float(dyn_cpl_init_match.group(1))
+            if dyn_cpl_snd_match:
+                snd_percent2 = float(dyn_cpl_snd_match.group(1))
+            if proc0_timings_match:
+                print("bbb15e. line=",line)
+                # The previous timings are average of all PEs, whereas
+                # the following times for only for PE 0, so don't read
+                # these.
+                break
 
+    rcv_percent = rcv_percent1 + rcv_percent2
+    init_percent = init_percent1 + init_percent2
+    snd_percent = snd_percent1 + snd_percent2
     try:
         model_time = total_time * \
-            ((100.0 - rcv_percentge - init_percentge - snd_percentge) * 0.01)
+            ((100.0 - rcv_percent - init_percent - snd_percent) * 0.01)
         coupling_time = total_time * \
-            (rcv_percentge + init_percentge + snd_percentge) * 0.01
-        put_time = total_time * snd_percentge * 0.01
+            (rcv_percent + init_percent + snd_percent) * 0.01
+        put_time = total_time * snd_percent * 0.01
     except NameError:
         sys.stderr.write('[FAIL] Unable to determine Oasis timings from'
                          ' the NEMO standard output\n')
         sys.exit(error.MISSING_CONTROLLER_FILE_ERROR)
 
     if cice_measurement:
-        cice_time = total_time * cice_percentage * 0.01
+        cice_time = total_time * cice_percent * 0.01
     else:
         sys.stdout.write('[INFO] Unable to determine time in CICE for this'
-                         ' configuration')
+                         ' configuration\n')
         cice_time = False
 
     return model_time, coupling_time, put_time, cice_time

@@ -34,7 +34,6 @@ NEMO_ENVIRONMENT_VARS_INITIAL = {
     'NEMO_VERSION': {},
     'OCEAN_LINK': {'default_val': 'ocean.exe'},
     'OCN_RES': {'default_val': ''},
-    'NEMO_NL': {'default_val': 'namelist_cfg'},
     'NEMO_START': {'default_val': ''},
     'NEMO_ICEBERGS_START': {'default_val': ''},
     'ROSE_LAUNCHER_PREOPTS_NEMO': {'default_val': 'unset',

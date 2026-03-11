@@ -99,7 +99,7 @@ class NemoPostProc(mt.ModelTemplate):
                      'grid_W', 'diaptr', 'trnd3d', 'scalar',
                      'UK_shelf_T', 'UK_shelf_U', 'UK_shelf_V'],
             'si3': ['icemod'],
-            'medusa': ['ptrc_T', 'diad_T', 'ptrd_T']
+            'medusa': ['coarse', 'ptrc_T', 'diad_T', 'ptrd_T']
             }
 
     @property

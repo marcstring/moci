@@ -125,11 +125,19 @@ def _setup_executable(common_env):
     # Copy the custom IO file if required
     _copy_iodef_custom(xios_envar)
 
-    # Get the list of coupled componenets
-    oasis_components, xios_envar = _setup_coupling_components(xios_envar)
-    # Update the iodef file
-    _update_iodef(using_server, using_coupler, oasis_components,
-                  xios_envar['IODEF_FILENAME'])
+    # We don't currently want to modify the iodef.xml if doing the
+    # the model coarsening - marc 5/4/23
+    if 'obgc' in common_env['models']:
+        # This would normally be done in _setup_coupling_components
+        xios_envar.remove('COUPLING_COMPONENTS')
+    else:
+        # I think this needs removing - marc 20/12/23
+        #xios_envar.remove('COUPLING_COMPONENTS')
+        # Get the list of coupled componenets
+        oasis_components, xios_envar = _setup_coupling_components(xios_envar)
+        # Update the iodef file
+        _update_iodef(using_server, using_coupler, oasis_components,
+                      xios_envar['IODEF_FILENAME'])
 
     return xios_envar
 

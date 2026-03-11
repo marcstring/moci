@@ -59,6 +59,13 @@ def _setup_nemo_cpld(common_envar, mct_envar, nemo_envar):
     for nemo_debug_file in nemo_debug_files:
         common.remove_file(nemo_debug_file)
 
+def _setup_obgc_cpld(common_env, mct_envar, obgc_envar):
+    '''
+    Setup OBGC for coupled configurations
+    '''
+    obgc_debug_files = glob.glob('*%s*.nc' % obgc_envar['OBGC_LINK'])
+    for obgc_debug_file in obgc_debug_files:
+        common.remove_file(obgc_debug_file)
 
 def _setup_lfric_cpld(common_envar, mct_envar, lfric_envar):
     '''
@@ -237,8 +244,9 @@ def _setup_executable(common_env, envarinsts, run_info):
 
         # Create transient field namelist (note if we're creating a
         # namcouple on the fly, this will have to wait until after
-        # the namcouple have been created).
-        _, _ = common.exec_subproc('./OASIS_fields')
+        # the namcouple has been created).
+        if 'um' in common_env['models']:
+            _, _ = common.exec_subproc('./OASIS_fields')
 
     for component in mct_envar['COUPLING_COMPONENTS'].split():
         if not component in common_env['models']:
@@ -396,4 +404,5 @@ SUPPORTED_MODELS = {'rivers': _setup_river_cpld,
                     'nemo': _setup_nemo_cpld,
                     'um': _setup_um_cpld,
                     'jnr': _setup_jnr_cpld,
-                    'lfric': _setup_lfric_cpld}
+                    'lfric': _setup_lfric_cpld,
+                    'obgc': _setup_obgc_cpld}
