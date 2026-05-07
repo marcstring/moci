@@ -98,9 +98,12 @@ def write_namcouple_header(common_env, nam_file, run_info, n_fields):
                    '# This is important only if FILLING analysis is '
                    'used for a coupling\n'
                    '# field in the run.\n'
-                   '#\n'
-                   '  30\n'
-                   ' $END\n'
+                   '#\n')
+    if run_info['calendar'] == 'gregorian':
+        nam_file.write('  1\n')
+    else:
+        nam_file.write('  30\n')
+    nam_file.write(' $END\n'
                    '#===================================================\n'
                    '# Start of transient definitions\n'
                    '#---------------------------------------------------\n'

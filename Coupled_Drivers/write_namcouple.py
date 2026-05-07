@@ -69,6 +69,7 @@ def _print_run_info(run_info):
     '''
     sys.stdout.write('[INFO] Display the contents of run_info:\n')
     sys.stdout.write('[INFO] -------- Resolutions -------- \n')
+    sys.stdout.write('[INFO] Calendar:          %s\n' % run_info['calendar'])
     if 'ATM_grid' in run_info:
         sys.stdout.write('[INFO] Atmosphere:        %s (%d, %d)\n' %
                          (run_info['ATM_grid'], run_info['ATM_resol'][0],

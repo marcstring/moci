@@ -391,6 +391,7 @@ def run_driver(envar_insts, mode, run_info):
         model_snd_list = None
         if not run_info['l_namcouple']:
             run_info = _sent_coupling_fields(exe_envar, run_info)
+            run_info['calendar'] = common_env['CALENDAR']
     elif mode == 'finalize':
         _finalize_executable(common_env)
         exe_envar = None
