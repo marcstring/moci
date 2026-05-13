@@ -236,11 +236,11 @@ def _finalize_cpmip_controller(common_env):
     if 'nemo' in common_env['models']:
         nemo_time, nemo_coupling_time, nemo_put_time, cice_time = \
             cpmip_nemo.get_nemo_info()
-        nemo_time /= nemo_cpus
-        nemo_coupling_time /= nemo_cpus
-        nemo_put_time /= nemo_cpus
+        nemo_time /= mpi_tasks['NEMO']
+        nemo_coupling_time /= mpi_tasks['NEMO']
+        nemo_put_time /= mpi_tasks['NEMO']
         if cice_time:
-            cice_time /= nemo_cpus
+            cice_time /= mpi_tasks['NEMO']
     else:
         cice_time = False
 
@@ -248,9 +248,9 @@ def _finalize_cpmip_controller(common_env):
     if 'obgc' in common_env['models']:
         obgc_time, obgc_coupling_time, obgc_put_time, _ = \
             cpmip_nemo.get_nemo_info(nemo_timing_output='bgc_timing.output')
-        obgc_time /= obgc_cpus
-        obgc_coupling_time /= obgc_cpus
-        obgc_put_time /= obgc_cpus
+        obgc_time /= mpi_tasks['OBGC']
+        obgc_coupling_time /= mpi_tasks['OBGC']
+        obgc_put_time /= mpi_tasks['OBGC']
 
     if cpmip_envar['COUPLED_PLATFORM'].lower() == 'ex':
         # Get the number of nodes from the -l PBS directives for each model.
