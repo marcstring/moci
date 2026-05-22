@@ -102,7 +102,6 @@ def get_nemo_info(nemo_timing_output='timing.output'):
             if dyn_cpl_snd_match:
                 snd_percent2 = float(dyn_cpl_snd_match.group(1))
             if proc0_timings_match:
-                print("bbb15e. line=",line)
                 # The previous timings are average of all PEs, whereas
                 # the following times for only for PE 0, so don't read
                 # these.

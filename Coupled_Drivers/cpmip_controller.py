@@ -83,6 +83,13 @@ def get_allocated_cpus(cpmip_envar):
             mpi_tasks[model] = int(n_mpi)
             cores = int((n_mpi * strides) / hyperthreads)
             allocated_cpu[model] = cores
+            # tmp - marc
+            if model == 'NEMO':
+                print("bbb8. mpi_tasks['NEMO']=",mpi_tasks['NEMO'])
+                print("bbb8. allocated_cpu['NEMO']=",allocated_cpu['NEMO'])
+            elif model == 'OBGC':
+                  print("mpi_tasks['OBGC']=",mpi_tasks['OBGC'])
+                  print("bbb8. allocated_cpu['OBGC']=",allocated_cpu['OBGC'])
         else:
             allocated_cpu[model] = 0
             mpi_tasks[model] = 0
@@ -267,17 +274,55 @@ def _finalize_cpmip_controller(common_env):
         allocated_nemo = 0
         allocated_obgc = 0
         allocated_xios = 0
+        print("bbb4. got here")
         for i_model in common_env['models'].split():
+            print("bbb4a. i_model=",i_model)
             if i_model == 'cice':
                 pass
             elif i_model == 'um':
                 allocated_um = pbs_l_nodes.pop(0) * plat_cores_per_node
+                if allocated_um < um_cpus:
+                    # As insufficient resources, assume model has another
+                    # remainder node.
+                    next_select_resoure = pbs_l_nodes.pop(0)
+                    if next_select_resoure == 1:
+                        allocated_um += plat_cores_per_node
+                    else:
+                        sys.stderr("[FAIL] problem reading the PBS command")
+                        sys.exit(error.PBS_READ_ERROR)
             elif i_model == 'jnr':
                 allocated_jnr = pbs_l_nodes.pop(0) * plat_cores_per_node
+                if allocated_jnr < jnr_cpus:
+                    # As insufficient resources, assume model has another
+                    # remainder node.
+                    next_select_resoure = pbs_l_nodes.pop(0)
+                    if next_select_resoure == 1:
+                        allocated_jnr += plat_cores_per_node
+                    else:
+                        sys.stderr("[FAIL] problem reading the PBS command")
+                        sys.exit(error.PBS_READ_ERROR)
             elif i_model == 'nemo':
                 allocated_nemo = pbs_l_nodes.pop(0) * plat_cores_per_node
+                if allocated_nemo < nemo_cpus:
+                    # As insufficient resources, assume model has another
+                    # remainder node.
+                    next_select_resoure = pbs_l_nodes.pop(0)
+                    if next_select_resoure == 1:
+                        allocated_nemo += plat_cores_per_node
+                    else:
+                        sys.stderr("[FAIL] problem reading the PBS command")
+                        sys.exit(error.PBS_READ_ERROR)
             elif i_model == 'obgc':
                 allocated_obgc = pbs_l_nodes.pop(0) * plat_cores_per_node
+                if allocated_obgc < obgc_cpus:
+                    # As insufficient resources, assume model has another
+                    # remainder node.
+                    next_select_resoure = pbs_l_nodes.pop(0)
+                    if next_select_resoure == 1:
+                        allocated_obgc += plat_cores_per_node
+                    else:
+                        sys.stderr("[FAIL] problem reading the PBS command")
+                        sys.exit(error.PBS_READ_ERROR)
             elif i_model == 'xios':
                 allocated_xios = pbs_l_nodes.pop(0) * plat_cores_per_node
 

@@ -269,3 +269,7 @@ MISSING_OASIS_RIV_SEND = 874
 
 # Missing namelist oasis_riv_send_nml from OASIS_RIV_SEND
 MISSING_OASIS_RIV_SEND_NML = 875
+
+# CPMIP errors
+# Problem reading resources from the PBS arguments
+PBS_READ_ERROR = 900
