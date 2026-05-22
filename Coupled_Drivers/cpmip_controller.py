@@ -83,13 +83,6 @@ def get_allocated_cpus(cpmip_envar):
             mpi_tasks[model] = int(n_mpi)
             cores = int((n_mpi * strides) / hyperthreads)
             allocated_cpu[model] = cores
-            # tmp - marc
-            if model == 'NEMO':
-                print("bbb8. mpi_tasks['NEMO']=",mpi_tasks['NEMO'])
-                print("bbb8. allocated_cpu['NEMO']=",allocated_cpu['NEMO'])
-            elif model == 'OBGC':
-                  print("mpi_tasks['OBGC']=",mpi_tasks['OBGC'])
-                  print("bbb8. allocated_cpu['OBGC']=",allocated_cpu['OBGC'])
         else:
             allocated_cpu[model] = 0
             mpi_tasks[model] = 0
@@ -274,9 +267,7 @@ def _finalize_cpmip_controller(common_env):
         allocated_nemo = 0
         allocated_obgc = 0
         allocated_xios = 0
-        print("bbb4. got here")
         for i_model in common_env['models'].split():
-            print("bbb4a. i_model=",i_model)
             if i_model == 'cice':
                 pass
             elif i_model == 'um':
