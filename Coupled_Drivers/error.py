@@ -91,15 +91,13 @@ MISMATCH_RESTART_DATE_ERROR = 700
 #  - 840-859: um_driver.py
 #  - 860-869: jnr_driver.py
 #  - 870-879: default_couplings.py
+#  - 880-889: obgc_driver.py
 
 # f90nml python module is unavailable
 F90NML_UNAVAILABLE = 800
 
 # Missing namcouple input
 MISSING_NAMCOUPLE_INPUT = 801
-
-# Unrecognised mapping for namcouple file
-UNRECOGNISED_MAPPING = 802
 
 # Need to define at least the first mapping for series of
 # coupling fields
@@ -157,17 +155,20 @@ MISSING_CPL_CONTROL = 823
 # Missing coupling frequency
 MISSING_CPL_FREQ = 824
 
+# Missing timestep for physical ocean
+MISSING_OCN_DT = 825
+
 # Can't find the core remapping directory
-MISSING_CORE_RMP_DIR = 825
+MISSING_CORE_RMP_DIR = 826
 
 # Can't find the core remapping file
-MISSING_CORE_RMP_FILE = 826
+MISSING_CORE_RMP_FILE = 827
 
 # Missing grid information in run_info
-MISSING_GRID_IN_RUN_INFO = 827
+MISSING_GRID_IN_RUN_INFO = 828
 
 # Missing a remapping weights directory
-MISSING_RMP_DIR = 828
+MISSING_RMP_DIR = 829
 
 # Missing OASIS send file for ocean
 MISSING_OASIS_OCN_SEND = 830
@@ -269,6 +270,16 @@ MISSING_OASIS_RIV_SEND = 874
 
 # Missing namelist oasis_riv_send_nml from OASIS_RIV_SEND
 MISSING_OASIS_RIV_SEND_NML = 875
+
+# Missing either atmosphere or biogeochemistry executabe to receive
+# fields from ocean executable.
+MISSING_OCN_RECEIVE_COMP = 876
+
+# Mismatch in timesteps for physical ocean and biogeochemistry
+MISMATCH_OCN_BGC_DT = 880
+
+# Missing entry oasis_bgc_send from namelist oasis_bgc_send_nml
+MISSING_OASIS_BGC_SEND = 881
 
 # CPMIP errors
 # Problem reading resources from the PBS arguments

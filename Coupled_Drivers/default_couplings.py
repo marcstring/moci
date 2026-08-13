@@ -144,13 +144,23 @@ def _determine_default_couplings(origin, ocean_nml, run_info):
         destinations = ["OCN"]
         weight_ref = 300
     elif origin == "OCN":
-        exchange_flags = OCN2ATM_FLAGS
-        exchange_couplings = OCN2ATM_COUPLINGS
-        if 'junior' in run_info['exec_list']:
-            destinations = ["ATM", "JNR"]
+        # Do we want ocean->atmosphere couplings
+        if 'toyatm' in run_info['exec_list']:
+            exchange_flags = OCN2ATM_FLAGS
+            exchange_couplings = OCN2ATM_COUPLINGS
+            if 'junior' in run_info['exec_list']:
+                destinations = ["ATM", "JNR"]
+            else:
+                destinations = ["ATM"]
+            weight_ref = 100
+        elif 'bgc' in run_info['exec_list']:
+            # There currently no default couplings between physical ocean
+            # and separate biogeochemistry executable
+            exchange_flags = []
         else:
-            destinations = ["ATM"]
-        weight_ref = 100
+            sys.stderr.write('[FAIL] When sending data from OCN expect there'
+                             ' to be either an ATM or BGC executable.\n')
+            sys.exit(error.MISSING_OCN_RECEIVE_COMP)
     else:
         # There is currently no default coupling from JNR or any
         # component which isn't ATM or OCN
@@ -202,7 +212,7 @@ def _determine_default_couplings(origin, ocean_nml, run_info):
                                     name_out, vind, grid,
                                     origin, dest, 1, False, mapping,
                                     exchange_couplings[cpl_field][3],
-                                    weighting, False, n_cpl_freq, None))
+                                    weighting, False, False, n_cpl_freq, None))
 
                         # Move to next field
                         vind += 1
@@ -233,6 +243,7 @@ def add_default_couplings(run_info, coupling_list):
         # Loop through the default entries
         for i_entry in i_default:
             nam_entry = coupling_list[i_entry]
+            print("f. nam_entry=",nam_entry)
             # Return a list of the fields normally coupled from this
             # source
             default_cpl = _determine_default_couplings(nam_entry.origin,

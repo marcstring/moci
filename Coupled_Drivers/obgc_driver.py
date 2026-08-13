@@ -23,10 +23,12 @@ import os
 import sys
 import shutil
 import common
+import error
 import nemo_driver
 import dr_env_lib.obgc_def
 import dr_env_lib.env_lib
 import top_controller
+import write_namcouple_ocn_utils
 
 def _check_obgc_nl(envar_container):
     '''
@@ -167,6 +169,35 @@ def _set_launcher_command(launcher, obgc_envar):
         obgc_envar['ROSE_LAUNCHER_PREOPTS_OBGC']
     return launch_cmd
 
+def _sent_coupling_fields(obgc_envar, run_info):
+    '''
+    Write the coupling fields sent from ocean biogeochemistry (BGC) into
+    model_snd_list. This function is only used when creating the namcouple
+    at run time.
+    '''
+    # Check that file specifying the coupling fields sent from
+    # NEMO is present
+    if not os.path.exists('OASIS_BGC_SEND'):
+        sys.stderr.write('[FAIL] OASIS_BGC_SEND is missing.\n')
+        sys.exit(error.MISSING_OASIS_BGC_SEND)
+
+    # Add BGC executable to our list of executables
+    if not 'exec_list' in run_info:
+        run_info['exec_list'] = []
+    run_info['exec_list'].append('bgc')
+
+    # Store ocean resolution if it is provided
+    if obgc_envar['OBGC_RES']:
+        run_info['BGC_grid'] = obgc_envar['OBGC_RES']
+
+    # Determine the BGC resolution
+    run_info = write_namcouple_ocn_utils.get_ocean_resol(
+        'BGC', obgc_envar['OBGC_NL'], run_info['NEMO_VERSION'], run_info)
+    
+    model_snd_list = None
+
+    return run_info, model_snd_list
+    
 def write_obgc_out_to_stdout():
     '''
     Write the contents of bgc.output to standard out
@@ -242,13 +273,11 @@ def run_driver(envar_insts, mode, run_info):
         exe_envar = _setup_executable(common_env, nemo_envar)
         launch_cmd = _set_launcher_command(common_env['ROSE_LAUNCHER'],
                                            exe_envar)
-        # Save for later - marc 31/3/23
-        #if run_info['l_namcouple']:
-        #    model_snd_list = None
-        #else:
-        #    run_info, model_snd_list = \
-        #        _sent_coupling_fields(exe_envar, run_info)
-        model_snd_list = None
+        if run_info['l_namcouple']:
+            model_snd_list = None
+        else:
+            run_info, model_snd_list = \
+                _sent_coupling_fields(exe_envar, run_info)
     elif mode == 'finalize':
         _finalize_executable(common_env)
         exe_envar = None

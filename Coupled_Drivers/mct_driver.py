@@ -295,7 +295,7 @@ def _sent_coupling_fields(mct_envar, run_info):
     '''
 
     # Dictionary for the component names
-    component_names = {'um':'ATM', 'nemo':'OCN', 'jnr':'JNR'}
+    component_names = {'um':'ATM', 'nemo':'OCN', 'jnr':'JNR', 'bgc':'BGC'}
     # Dictionary for the coupling frequencies
     # (Note that for now, we're assuming that coupling frequencies
     # for JNR<->OCN are the same as ATM<->OCN)
@@ -308,55 +308,85 @@ def _sent_coupling_fields(mct_envar, run_info):
                     'JNR2OCN_freq': ['oasis_couple_freq_ao'],
                     'OCN2JNR_freq': ['oasis_couple_freq_oa']}
 
-    # Check that SHARED exists
-    if not os.path.isfile(run_info['SHARED_FILE']):
-        sys.stderr.write('[FAIL] not found SHARED file.\n')
-        sys.exit(error.NOT_FOUND_SHARED)
+    # tmp - marc
+    print("c. mct_envar=",mct_envar['COUPLING_COMPONENTS'])
+    print("c. run_info=",run_info)
+    
+    # Read atmosphere data
+    if 'um' in mct_envar['COUPLING_COMPONENTS']:
+        # Check that SHARED exists
+        if not os.path.isfile(run_info['SHARED_FILE']):
+            sys.stderr.write('[FAIL] not found SHARED file.\n')
+            sys.exit(error.NOT_FOUND_SHARED)
 
-    # Read the namelist file SHARED
-    shared_nml = f90nml.read(run_info['SHARED_FILE'])
-    for component1 in mct_envar['COUPLING_COMPONENTS'].split():
-        for component2 in mct_envar['COUPLING_COMPONENTS'].split():
-            if component2 != component1:
-                # Check component names exist
-                if not component1 in component_names or \
-                        not component2 in component_names:
-                    sys.stderr.write('[FAIL] %s or %s is unrecognised as '
-                                     'a component name\n' % (component1,
-                                                             component2))
-                    sys.exit(error.UNRECOGNISED_COMP)
+        # Read the namelist file SHARED
+        shared_nml = f90nml.read(run_info['SHARED_FILE'])
+        for component1 in mct_envar['COUPLING_COMPONENTS'].split():
+            for component2 in mct_envar['COUPLING_COMPONENTS'].split():
+                if component2 != component1:
+                    # Check component names exist
+                    if not component1 in component_names or \
+                       not component2 in component_names:
+                        sys.stderr.write('[FAIL] %s or %s is unrecognised as '
+                                         'a component name\n' % (component1,
+                                                                 component2))
+                        sys.exit(error.UNRECOGNISED_COMP)
 
-                # Determine the variable which stores the coupling frequency
-                cpl_var = component_names[component1] + '2' + \
-                    component_names[component2] + '_freq'
+                    # Determine the variable which stores the coupling frequency
+                    cpl_var = component_names[component1] + '2' + \
+                        component_names[component2] + '_freq'
 
-                # Check the coupling frequency/ies exist
-                if not cpl_var in couple_freqs:
-                    sys.stderr.write('[FAIL] %s is not recognised\n' %
-                                     cpl_var)
-                    sys.exit(error.UNRECOGNISED_CPL_VAR)
-                nml_cpl_vars = couple_freqs[cpl_var]
-                if 'coupling_control' not in shared_nml:
-                    sys.stderr.write('[FAIL] failed to find coupling_control '
-                                     'in SHARED namelist.\n')
-                    sys.exit(error.MISSING_CPL_CONTROL)
+                    # Check the coupling frequency/ies exist
+                    if not cpl_var in couple_freqs:
+                        sys.stderr.write('[FAIL] %s is not recognised\n' %
+                                         cpl_var)
+                        sys.exit(error.UNRECOGNISED_CPL_VAR)
+                    nml_cpl_vars = couple_freqs[cpl_var]
+                    if 'coupling_control' not in shared_nml:
+                        sys.stderr.write('[FAIL] failed to find '
+                                         'coupling_control in SHARED '
+                                         'namelist.\n')
+                        sys.exit(error.MISSING_CPL_CONTROL)
 
-                # Loop across the coupling variables
-                for nml_cpl_entry in nml_cpl_vars:
-                    if not nml_cpl_entry in shared_nml['coupling_control']:
-                        sys.stderr.write('[FAIL] failed to find %s in '
-                                         'namelist coupling_control\n' %
-                                         nml_cpl_entry)
-                        sys.exit(error.MISSING_CPL_FREQ)
+                    # Loop across the coupling variables
+                    for nml_cpl_entry in nml_cpl_vars:
+                        if not nml_cpl_entry in shared_nml['coupling_control']:
+                            sys.stderr.write('[FAIL] failed to find %s in '
+                                             'namelist coupling_control\n' %
+                                             nml_cpl_entry)
+                            sys.exit(error.MISSING_CPL_FREQ)
 
-                    # Store coupling frequency
-                    if not cpl_var in run_info:
-                        run_info[cpl_var] = []
-                    cpl_freq = 3600 * \
-                        shared_nml['coupling_control'][nml_cpl_entry][0] + \
-                        60 * shared_nml['coupling_control'][nml_cpl_entry][1]
-                    run_info[cpl_var].append(cpl_freq)
+                        # Store coupling frequency
+                        if not cpl_var in run_info:
+                            run_info[cpl_var] = []
+                        cpl_freq = 3600 * \
+                            shared_nml['coupling_control'][nml_cpl_entry][0] + \
+                            60 * \
+                            shared_nml['coupling_control'][nml_cpl_entry][1]
+                        run_info[cpl_var].append(cpl_freq)
 
+    # Coupling frequency between physical ocean and biogeochemistry (BGC) is
+    # determined by timestep for physical ocean.
+    if 'obgc' in mct_envar['COUPLING_COMPONENTS']:
+        if 'OCN_dt' in run_info:
+            if 'BGC_dt' in run_info and \
+               run_info['OCN_dt'] != run_info['BGC_dt']:
+                sys.stderr.write('[FAIL] % mismatch between OCN dt, %d, and '
+                                 'BGC dt, %d, .\n' %
+                                 (run_info['OCN_dt'], run_info['BGC_dt']))
+                sys.exit(error.MISMATCH_OCN_BGC_DT)
+            else:
+                run_info['OCN2BGC_freq'] = []
+                run_info['OCN2BGC_freq'].append(run_info['OCN_dt'])
+                run_info['BGC2OCN_freq'] = []
+                run_info['BGC2OCN_freq'].append(run_info['OCN_dt'])
+        else:
+            sys.stderr.write('[FAIL] % failed to find timestep for physical '
+                             'ocean\n')
+            sys.exit(error.MISSING_OCN_DT)
+
+    print("d. run_info=",run_info)
+    
     return run_info
 
 

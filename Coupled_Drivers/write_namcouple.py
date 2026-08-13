@@ -41,8 +41,8 @@ class NamcoupleEntry():
     '''
 
     def __init__(self, name_out, field_id, grid, origin, dest, nlev, l_soil,
-                 mapping, mapping_type, weight, l_hybrid, n_cpl_freq,
-                 override_cpl_freq):
+                 mapping, mapping_type, weight, l_hybrid, l_ocn2bgc,
+                 n_cpl_freq, override_cpl_freq):
         self.name_out = name_out
         self.field_id = field_id
         self.grid = grid
@@ -54,6 +54,7 @@ class NamcoupleEntry():
         self.mapping_type = mapping_type
         self.weight = weight
         self.l_hybrid = l_hybrid
+        self.l_ocn2bgc = l_ocn2bgc 
         self.n_cpl_freq = n_cpl_freq
         self.override_cpl_freq = override_cpl_freq
 
@@ -93,6 +94,14 @@ def _print_run_info(run_info):
                              run_info['NEMO_VERSION'])
         else:
             sys.stdout.write('\n')
+    if 'BGC_grid' in run_info:
+        if 'BGC_resol' in run_info:
+            sys.stdout.write('[INFO] BGC:               %s (%d, %d)\n' %
+                             (run_info['BGC_grid'], run_info['BGC_resol'][0],
+                              run_info['BGC_resol'][1]))
+        else:
+            sys.stdout.write('[INFO] BGC:               %s\n' %
+                             run_info['BGC_grid'])
     if 'riv3' in run_info:
         if run_info['riv3'] > 0:
             sys.stdout.write('[INFO] Number of rivers:  %d\n' %
@@ -100,10 +109,10 @@ def _print_run_info(run_info):
 
     sys.stdout.write('[INFO] -------- Coupling frequencies (in mins) '
                      '-------- \n')
-    comp_order = ['ATM', 'JNR', 'OCN']
+    comp_order = ['ATM', 'JNR', 'OCN', 'BGC']
     comp_list = [comp for comp in comp_order if '{}_resol'.format(comp) in
                  run_info]
-    for component1, component2 in itertools.permutations(comp_list, r=2):
+    for component1, component2 in itertools.combinations(comp_list, r=2):
         key = component2 + '2' + component1 + '_freq'
         sys.stdout.write('[INFO] %s -> %s:           %0.1f\n' %
                          (component2, component1,
@@ -155,8 +164,9 @@ def _print_run_info(run_info):
         for field in run_info['rmp_create']:
             sys.stdout.write('[INFO]    - %s\n' % field)
     sys.stdout.write('[INFO] -------- Files -------- \n')
-    sys.stdout.write('[INFO] File containing coupling frequencies: %s\n' %
-                     run_info['SHARED_FILE'])
+    if 'SHARED_FILE' in run_info:
+        sys.stdout.write('[INFO] File containing coupling frequencies: %s\n' %
+                         run_info['SHARED_FILE'])
     if 'nemo_nl' in run_info:
         sys.stdout.write('[INFO] Default couplings determined from:    %s\n' %
                          run_info['nemo_nl'])
@@ -204,16 +214,18 @@ def add_to_cpl_list(origin, l_hybrid, n_cpl_freq, send_list_raw):
     mapping = None
     weighting = None
     model_snd_list = []
+    print("f. send_list_raw=",send_list_raw)
     if not isinstance(send_list_raw, list):
         send_list_raw = [send_list_raw]
 
     # Loop across the raw entries
     for cpl_entry_raw in send_list_raw:
+        print("g. cpl_entry_raw=",cpl_entry_raw)
         if cpl_entry_raw == 'default':
             # Entry will later be filled with the default options
             model_snd_list.append(
                 NamcoupleEntry('default', '?', '?', origin, '?', '?', '?',
-                               '?', '?', '?', l_hybrid, n_cpl_freq, None))
+                               '?', '?', '?', l_hybrid, '?', n_cpl_freq, None))
         else:
             # A raw coupling entry can have up to 7 arguments:
             # <source name>;<vind>;<grid>;<destination>;<number of level>;
@@ -248,9 +260,7 @@ def add_to_cpl_list(origin, l_hybrid, n_cpl_freq, send_list_raw):
                     if sub_parts[0] in RMP_MAPPING:
                         mapping = RMP_MAPPING[sub_parts[0]]
                     else:
-                        sys.stderr.write("[FAIL] Don't recognise this "
-                                         "mapping: %s.\n" % parts[5])
-                        sys.exit(error.UNRECOGNISED_MAPPING)
+                        mapping = parts[5]
                     if len(sub_parts) > 1:
                         mapping_type = int(sub_parts[1])
                 else:
@@ -273,7 +283,8 @@ def add_to_cpl_list(origin, l_hybrid, n_cpl_freq, send_list_raw):
                     model_snd_list.append(
                         NamcoupleEntry(name_out, field_id, grid, origin,
                                        dest, nlev, '?', mapping, mapping_type,
-                                       weighting, l_hybrid, n_cpl_freq, None))
+                                       weighting, l_hybrid, '?', n_cpl_freq,
+                                       None))
                     # Just add to the default weighting
                     weighting += 2
             else:

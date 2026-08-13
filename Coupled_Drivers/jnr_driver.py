@@ -25,6 +25,7 @@ import common
 import error
 import save_um_state
 import um_driver
+import write_namcouple_atm_utils
 import write_namcouple
 import dr_env_lib.jnr_def
 import dr_env_lib.env_lib
@@ -164,11 +165,12 @@ def _sent_coupling_fields(run_info):
     run_info['exec_list'].append('junior')
 
     # Determine the atmosphere resolution
-    run_info = um_driver.get_atmos_resol('JNR', 'SIZES_JNR', run_info)
+    run_info = write_namcouple_atm_utils.get_atmos_resol('JNR', 'SIZES_JNR',
+                                                         run_info)
 
     # Determine the number of tile types
     run_info['JNR_veg_tiles'], run_info['JNR_non_veg_tiles'] \
-        = um_driver.get_jules_levels('SHARED_JNR')
+        = write_namcouple_atm_utils.get_jules_levels('SHARED_JNR')
 
     # Read the OASIS sending namelist
     oasis_nml = f90nml.read('OASIS_JNR_SEND')
@@ -194,7 +196,7 @@ def _sent_coupling_fields(run_info):
             oasis_nml['oasis_send_nml']['oasis_jnr_send'])
 
     # Add any hybrid coupling fields
-    run_info, hybrid_snd_list = um_driver.read_hybrid_coupling(
+    run_info, hybrid_snd_list = write_namcouple_atm_utils.read_hybrid_coupling(
         'HYBRID_JNR2SNR', run_info, oasis_nml)
     if hybrid_snd_list:
         if model_snd_list:

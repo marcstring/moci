@@ -22,8 +22,13 @@ from mule.stashmaster import STASHmaster
 import error
 import write_cf_name_table
 
-# The part of name used in namcouple to identify the component
-NAM_COMP_NAMES = {'ATM':'atm', 'JNR':'jnr', 'OCN':'model01_O'}
+# The part of name used in namcouple to identify the component for
+# atmosphere to ocean couplings
+NAM_COMP_NAMES_ATM2OCN = {'ATM':'atm', 'JNR':'jnr', 'OCN':'model01_O'}
+
+# The part of name used in namcouple to identify the component for
+# ocean to ocean couplings
+NAM_COMP_NAMES_OCN2OCN = {'OCN':'O_', 'BGC':'B_'}
 
 # The grid names for a ATMOS<->OCN coupling
 ATM2OCN_GRIDS = {'ATM':{'u':'aum3', 'v':'avm3', 't':'atm3',
@@ -32,6 +37,10 @@ ATM2OCN_GRIDS = {'ATM':{'u':'aum3', 'v':'avm3', 't':'atm3',
                         'r':'riv3', 's':'scal'},
                  'OCN':{'u':'uor1', 'v':'vor1', 't':'tor1',
                         'r':'riv3', 's':'scal'}}
+
+# The grid names for a OCN<->BGC coupling
+OCN2BGC_GRIDS = {'OCN':{'u':'uo3s', 'v':'vo3s', 'w':'wo3s', 't':'to3s'},
+                 'BGC':{'u':'uo3t', 'v':'vo3t', 'w':'wo3t', 't':'to3t'}}
 
 class StashInfo():
     '''
@@ -257,14 +266,24 @@ def _snr2jnr_field_info(nam_entry, model_levels, soil_levels, n_veg_tiles,
 
     return name_in, longname, grid, nlev, l_soil
 
-def _atm2ocn_field_info(nam_entry, cf_names, cf_table_num, n_cf_table):
+def _cpl_field_info(nam_entry, cf_names, cf_table_num, n_cf_table):
     '''
-    Field information for ATM<->OCN coupling
+    Field information for any couplings which aren't SNR<->JNR
     '''
     # Determine the name_in
-    name_in_comp = NAM_COMP_NAMES[nam_entry.origin]
-    name_out_comp = NAM_COMP_NAMES[nam_entry.dest]
-    name_in = nam_entry.name_out.replace(name_in_comp, name_out_comp)
+    if nam_entry.l_ocn2bgc:
+        # Coupling between two ocean executables as used for the ocean
+        # coarsening.
+        name_in_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.origin]
+        name_out_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.dest]
+        name_in = nam_entry.name_out.replace(name_in_comp, name_out_comp)
+        # tmp - marc
+        print("k. name_in=",name_in)
+    else:
+        # Coupling between an atmosphere and ocean executable
+        name_in_comp = NAM_COMP_NAMES_ATM2OCN[nam_entry.origin]
+        name_out_comp = NAM_COMP_NAMES_ATM2OCN[nam_entry.dest]
+        name_in = nam_entry.name_out.replace(name_in_comp, name_out_comp)
 
     # Determine the cf_name_table.txt attributes
     cf_code = \
@@ -387,17 +406,7 @@ def _write_grid_info(nam_file, ocn_abrev, nam_entry, seq,
     '''
 
     # Determine the grid names
-    if nam_entry.origin == 'OCN' or nam_entry.dest == 'OCN':
-        # We'll need a land-sea mask for this
-        origin_grid = ATM2OCN_GRIDS[nam_entry.origin][nam_entry.grid]
-        dest_grid = ATM2OCN_GRIDS[nam_entry.dest][nam_entry.grid]
-        if nam_entry.origin == 'OCN':
-            origin_overlap = 2
-            dest_overlap = 0
-        else:
-            origin_overlap = 0
-            dest_overlap = 2
-    else:
+    if nam_entry.l_hybrid:
         # SNR<->JNR coupling
         origin_overlap = 0
         dest_overlap = 0
@@ -417,6 +426,26 @@ def _write_grid_info(nam_file, ocn_abrev, nam_entry, seq,
         # Put parts of the grid names together
         origin_grid = origin_start + mid_name + nam_entry.grid
         dest_grid = dest_start + mid_name + nam_entry.grid
+
+    elif nam_entry.l_ocn2bgc:
+        # OCN<->BGC coupling
+        origin_grid = OCN2BGC_GRIDS[nam_entry.origin][nam_entry.grid]
+        dest_grid = OCN2BGC_GRIDS[nam_entry.dest][nam_entry.grid]
+        origin_overlap = 2
+        dest_overlap = 2
+    elif nam_entry.origin == 'OCN' or nam_entry.dest == 'OCN':
+        # We'll need a land-sea mask for this
+        origin_grid = ATM2OCN_GRIDS[nam_entry.origin][nam_entry.grid]
+        dest_grid = ATM2OCN_GRIDS[nam_entry.dest][nam_entry.grid]
+        if nam_entry.origin == 'OCN':
+            origin_overlap = 2
+            dest_overlap = 0
+        else:
+            origin_overlap = 0
+            dest_overlap = 2
+    else:
+        sys.stderr.write('[FAIL] unclear on mapping')
+        sys.exit(error.UNCLEAR_MAPPING)
 
     # 0D scalar passing has very different arguments
     if nam_entry.mapping == 'OneVal':
@@ -588,9 +617,17 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
             cf_table_number = n_cf_table
 
         else:
+            # Determine if coupling to ocean executables together, as
+            # used for the coarsening
+            if (nam_entry.origin == 'OCN' and nam_entry.dest == 'BGC') or \
+               (nam_entry.origin == 'BGC' and nam_entry.dest == 'OCN'):
+                nam_entry.l_ocn2bgc = True
+            else:
+                nam_entry.l_ocn2bgc = False
+
             # Determine further field information
             name_in, cf_names, cf_table_number, cf_table_num, n_cf_table \
-                = _atm2ocn_field_info(nam_entry, cf_names, cf_table_num,
+                = _cpl_field_info(nam_entry, cf_names, cf_table_num,
                                       n_cf_table)
             longname = cf_names[cf_table_number - 1].longname
 

@@ -31,6 +31,7 @@ OBGC_ENVIRONMENT_VARS_INITIAL = {
     'OBGC_IPROC': {'desc': 'Number of OBGC processors in the i direction'},
     'OBGC_JPROC': {'desc': 'Number of OBGC processors in the j direction'},
     'OBGC_LINK': {'default_val': 'obgc.exe'},
+    'OBGC_RES': {'default_val': ''},
     'ROSE_LAUNCHER_PREOPTS_OBGC': {'default_val': 'unset',
                                    'triggers': [
                                        [lambda my_val: my_val == 'unset',

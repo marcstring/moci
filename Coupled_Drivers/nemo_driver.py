@@ -28,6 +28,7 @@ import shutil
 import inc_days
 import common
 import error
+import write_namcouple_ocn_utils
 
 try:
     import cf_units
@@ -52,13 +53,6 @@ import si3_controller
 
 # Define errors for the NEMO driver only
 SERIAL_MODE_ERROR = 99
-
-# Ocean resolutions
-OCEAN_RESOLS = {'orca2': [182, 149],
-                'orca1': [362, 332],
-                'orca025': [1442, 1021],
-                'orca12': [4322, 3059],
-                'orca36': [12960, 10850]}
 
 def _check_nemonl(envar_container):
     '''
@@ -843,68 +837,6 @@ def _set_launcher_command(launcher, nemo_envar):
         nemo_envar['ROSE_LAUNCHER_PREOPTS_NEMO']
     return launch_cmd
 
-def get_ocean_resol(nemo_nl_file, run_info):
-    '''
-    Determine the ocean resolution.
-    This function is only used when creating the namcouple at run time.
-    '''
-
-    # See if resolution is contained within namelists (existent of
-    # namelist_cfg has already been checked)
-    ocean_nml = f90nml.read(nemo_nl_file)
-
-    # Check the required entries exist
-    if 'namcfg' not in ocean_nml:
-        sys.stderr.write('[FAIL] namcfg not found in namelist_cfg\n')
-        sys.exit(error.MISSING_OCN_RESOL_NML)
-
-    if 'jpiglo' in ocean_nml['namcfg']:
-        # Resolution is contained within namelists
-
-        if 'jpiglo' not in ocean_nml['namcfg'] or \
-           'jpjglo' not in ocean_nml['namcfg'] or \
-           'cp_cfg' not in ocean_nml['namcfg'] or \
-           'jp_cfg' not in ocean_nml['namcfg']:
-            sys.stderr.write('[FAIL] cp_cfg, jp_cfg, jpiglo or jpjglo are '
-                             'missing from namelist namcf in namelist_cfg\n')
-            sys.exit(error.MISSING_OCN_RESOL)
-
-        # Check it is on orca grid
-        if ocean_nml['namcfg']['cp_cfg'] != 'orca':
-            sys.stderr.write('[FAIL] we can currently only handle the '
-                             'ORCA grid\n')
-            sys.exit(error.NOT_ORCA_GRID)
-
-        # Check this is a grid we recognise
-        if ocean_nml['namcfg']['jp_cfg'] == 25:
-            run_info['OCN_grid'] = 'orca025'
-        else:
-            run_info['OCN_grid'] = 'orca' + str(ocean_nml['namcfg']['jp_cfg'])
-
-        # Store the ocean resolution
-        run_info['OCN_resol'] = [ocean_nml['namcfg']['jpiglo'],
-                                 ocean_nml['namcfg']['jpjglo']]
-
-    else:
-        # Resolution should be contained within a domain_cfg netCDF file.
-        # Rather than read this file, assume resolution is declared.
-        if 'OCN_grid' not in run_info:
-            sys.stderr.write('[FAIL] it is necessary to declare the ocean '
-                             'resolution by setting the OCN_RES environment '
-                             'variable.')
-            sys.exit(error.NOT_DECLARE_OCN_RES)
-        else:
-            # Determine the ocean resolution
-            if run_info['OCN_grid'] not in OCEAN_RESOLS:
-                sys.stderr.write('[FAIL] the ocean resolution for %s is '
-                                 'unknown' % run_info['OCN_grid'])
-                sys.exit(error.UNKNOWN_OCN_RESOL)
-            else:
-                run_info['OCN_resol'] = [OCEAN_RESOLS[run_info['OCN_grid']][0],
-                                         OCEAN_RESOLS[run_info['OCN_grid']][1]]
-
-    return run_info
-
 def _sent_coupling_fields(nemo_envar, run_info):
     '''
     Write the coupling fields sent from NEMO into model_snd_list.
@@ -927,10 +859,14 @@ def _sent_coupling_fields(nemo_envar, run_info):
 
     # Store the nemo version
     if nemo_envar['NEMO_VERSION']:
-        run_info['NEMO_VERSION'] = nemo_envar['NEMO_VERSION']
+        run_info['NEMO_VERSION'] = int(nemo_envar['NEMO_VERSION'])
+    else:
+        # Assume NEMO4.2
+        run_info['NEMO_VERSION'] = 402
 
     # Determine the ocean resolution
-    run_info = get_ocean_resol(nemo_envar['NEMO_NL'], run_info)
+    run_info = write_namcouple_ocn_utils.get_ocean_resol(
+        'OCN', nemo_envar['NEMO_NL'], run_info['NEMO_VERSION'], run_info)
 
     # If using the default coupling option, we'll need to read the
     # NEMO namelist later
@@ -950,12 +886,24 @@ def _sent_coupling_fields(nemo_envar, run_info):
                          'OASIS_OCN_SEND.\n')
         sys.exit(error.MISSING_OASIS_OCN_SEND)
 
+    # If there's no atmosphere in this run, core namcouple options should
+    # come from OASIS_OCN_SEND
+    if 'toyatm' not in run_info['exec_list']:
+        import write_namcouple_atm_utils
+        run_info = write_namcouple_atm_utils.core_namcouple_vars(
+            oasis_nml['oasis_ocn_send_nml'], run_info)
+    
     # Create a list of fields sent from OCN
+    # tmp - marc
+    print("a. oasis_ocn_send=",oasis_nml['oasis_ocn_send_nml']['oasis_ocn_send'])
+    #
     import write_namcouple
     model_snd_list = \
         write_namcouple.add_to_cpl_list( \
         'OCN', False, 0,
         oasis_nml['oasis_ocn_send_nml']['oasis_ocn_send'])
+    # tmp - marc
+    print("i. model_snd_list=",model_snd_list)
 
     return run_info, model_snd_list
 
