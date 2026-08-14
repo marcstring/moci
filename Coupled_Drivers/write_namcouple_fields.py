@@ -483,7 +483,13 @@ def _write_grid_info(nam_file, ocn_abrev, nam_entry, seq,
             ny_dest += 1
 
         # Write the resolutions and grids
-        nam_file.write(' %d %d %d %d %s %s SEQ=+%d\n' % \
+        # We currently don't have the dimensions for the OCN->BGC coupling
+        # - marc 14/8/26
+        if nam_entry.l_ocn2bgc:
+            nam_file.write(' %s %s SEQ=+%d\n' % \
+                           (origin_grid, dest_grid, seq))
+        else:
+            nam_file.write(' %d %d %d %d %s %s SEQ=+%d\n' % \
                            (run_info[origin_resol_name][0], ny_origin,
                             run_info[dest_resol_name][0], ny_dest,
                             origin_grid, dest_grid, seq))
@@ -574,7 +580,7 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
     cf_names = []
     cf_table_num = {}
     n_cf_table = 0
-    cpl_restart_file = 'atmos_restart.nc'
+    cpl_restart_file = 'oasis_restart.nc'
     stashmaster_info = None
 
     # Loop across all the coupling
