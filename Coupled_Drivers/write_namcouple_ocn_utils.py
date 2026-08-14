@@ -88,8 +88,8 @@ def get_ocean_resol(nemo_name, nemo_nl_file, nemo_version, run_info):
         # Rather than read this file, assume resolution is declared.
         if grid_name not in run_info:
             sys.stderr.write('[FAIL] it is necessary to declare the ocean '
-                             'resolution by setting the OCN_RES environment '
-                             'variable.')
+                             'resolution by setting the %_RES environment '
+                             'variable.' % nemo_name)
             sys.exit(error.NOT_DECLARE_OCN_RES)
         else:
             # Determine the ocean resolution

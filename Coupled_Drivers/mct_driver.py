@@ -144,9 +144,17 @@ def _setup_rmp_dir(mct_envar, run_info):
             linkname = os.path.split(remap_file)[-1]
             os.symlink(remap_file, linkname)
     else:
-        # Need to be precise about order of components
-        comp_names = {'um':'ATM', 'jnr':'JNR', 'nemo':'OCN'}
-        comp_order = ['um', 'jnr', 'nemo']
+        # Bodge for now so this can remain compatible with the 3 executable
+        # setup - marc 14/8/26
+        if mct_envar['RMP_DIR'].find('remapping/JSO/v1') > -1:
+            # This is the old 3 executable setup
+            # Need to be precise about order of components
+            comp_names = {'um':'ATM', 'jnr':'JNR', 'nemo':'OCN'}
+            comp_order = ['um', 'jnr', 'nemo']
+        else:
+            # The new 4 executable setup
+            comp_names = {'um':'ATM', 'jnr':'JNR', 'nemo':'OCN', 'obgc':'BGC'}
+            comp_order = ['um', 'jnr', 'nemo', 'obgc']
         comp_list = []
         for component in comp_order:
             if component in mct_envar['COUPLING_COMPONENTS'].split():
@@ -165,6 +173,8 @@ def _setup_rmp_dir(mct_envar, run_info):
             else:
                 core_dir_str = grid_name
         core_dir_str = mct_envar['RMP_DIR'] + '/' + core_dir_str
+        print("p. core_dir_str=",core_dir_str)
+        print("p. run_info=",run_info)
 
         # Find the core remapping directory and link the core
         # remapping files

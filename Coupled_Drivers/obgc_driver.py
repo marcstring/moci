@@ -193,7 +193,10 @@ def _sent_coupling_fields(obgc_envar, run_info):
     # Determine the BGC resolution
     run_info = write_namcouple_ocn_utils.get_ocean_resol(
         'BGC', obgc_envar['OBGC_NL'], run_info['NEMO_VERSION'], run_info)
-    
+
+    # Add a 'b' to BGC grid name to distinguish it from the OCN grid.
+    run_info['BGC_grid'] = run_info['BGC_grid'] + 'b'
+
     model_snd_list = None
 
     return run_info, model_snd_list
