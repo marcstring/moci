@@ -31,16 +31,16 @@ NAM_COMP_NAMES_ATM2OCN = {'ATM':'atm', 'JNR':'jnr', 'OCN':'model01_O'}
 NAM_COMP_NAMES_OCN2OCN = {'OCN':'O_', 'BGC':'B_'}
 
 # The grid names for a ATMOS<->OCN coupling
-ATM2OCN_GRIDS = {'ATM':{'u':'aum3', 'v':'avm3', 't':'atm3',
-                        'r':'riv3', 's':'scal'},
-                 'JNR':{'u':'jum3', 'v':'jvm3', 't':'jtm3',
-                        'r':'riv3', 's':'scal'},
-                 'OCN':{'u':'uor1', 'v':'vor1', 't':'tor1',
-                        'r':'riv3', 's':'scal'}}
+ATM2OCN_GRIDS = {'ATM':{'r':'riv3', 's':'scal', 't':'atm3',
+                        'u':'aum3', 'v':'avm3'},
+                 'JNR':{'r':'riv3', 's':'scal', 't':'jtm3',
+                        'u':'jum3', 'v':'jvm3'},
+                 'OCN':{'r':'riv3', 's':'scal', 't':'tor1',
+                        'u':'uor1', 'v':'vor1'}}
 
 # The grid names for a OCN<->BGC coupling
-OCN2BGC_GRIDS = {'OCN':{'u':'uo3s', 'v':'vo3s', 'w':'wo3s', 't':'to3s'},
-                 'BGC':{'u':'uo3t', 'v':'vo3t', 'w':'wo3t', 't':'to3t'}}
+OCN2BGC_GRIDS = {'OCN':{'t':'to3s', 'u':'uo3s', 'v':'vo3s', 'w':'wo3s'},
+                 'BGC':{'t':'to3t', 'u':'uo3t', 'v':'vo3t', 'w':'wo3t'}}
 
 class StashInfo():
     '''
@@ -266,7 +266,7 @@ def _snr2jnr_field_info(nam_entry, model_levels, soil_levels, n_veg_tiles,
 
     return name_in, longname, grid, nlev, l_soil
 
-def _cpl_field_info(nam_entry, cf_names, cf_table_num, n_cf_table):
+def _cpl_field_info(name_out, nam_entry, cf_names, cf_table_num, n_cf_table):
     '''
     Field information for any couplings which aren't SNR<->JNR
     '''
@@ -276,24 +276,24 @@ def _cpl_field_info(nam_entry, cf_names, cf_table_num, n_cf_table):
         # coarsening.
         name_in_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.origin]
         name_out_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.dest]
-        name_in = nam_entry.name_out.replace(name_in_comp, name_out_comp)
+        name_in = name_out.replace(name_in_comp, name_out_comp)
         # tmp - marc
         print("k. name_in=",name_in)
     else:
         # Coupling between an atmosphere and ocean executable
         name_in_comp = NAM_COMP_NAMES_ATM2OCN[nam_entry.origin]
         name_out_comp = NAM_COMP_NAMES_ATM2OCN[nam_entry.dest]
-        name_in = nam_entry.name_out.replace(name_in_comp, name_out_comp)
+        name_in = name_out.replace(name_in_comp, name_out_comp)
 
     # Determine the cf_name_table.txt attributes
     cf_code = \
-        nam_entry.name_out.replace(name_in_comp, '').split('_cat')[0]
+        name_out.replace(name_in_comp, '').split('_cat')[0]
     if cf_code in write_cf_name_table.CF_ATTR:
         longname = write_cf_name_table.CF_ATTR[cf_code][0]
         unit = write_cf_name_table.CF_ATTR[cf_code][1]
     else:
         sys.stdout.write('[WARNING] full name and units unknown for %s.\n'
-                         % nam_entry.name_out)
+                         % name_out)
         longname = "unknown_name"
         unit = "unknown_unit"
 
@@ -631,11 +631,33 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
             else:
                 nam_entry.l_ocn2bgc = False
 
-            # Determine further field information
-            name_in, cf_names, cf_table_number, cf_table_num, n_cf_table \
-                = _cpl_field_info(nam_entry, cf_names, cf_table_num,
-                                      n_cf_table)
-            longname = cf_names[cf_table_number - 1].longname
+            # See if there is more than one field
+            if nam_entry.name_out.find('&') > -1:
+                # We're passing more than one field in this entry, so
+                # separate and recombine for some fields.
+                field_name_list = nam_entry.name_out.split('&')
+                nam_entry.name_out = nam_entry.name_out.replace('&', ':')
+
+                # Loop over fields and find further field information.
+                name_in = ''
+                longname = ''
+                for field_name in field_name_list:
+                    field_name_in, cf_names, cf_table_number, cf_table_num, \
+                        n_cf_table \
+                    = _cpl_field_info(field_name, nam_entry, cf_names,
+                                      cf_table_num, n_cf_table)
+                    field_longname = cf_names[cf_table_number - 1].longname
+                    if name_in:
+                        name_in = name_in + ':'
+                        longname = longname + ' & '
+                    name_in = name_in + field_name_in
+                    longname = longname + field_longname
+            else:
+                # Determine further field information.
+                name_in, cf_names, cf_table_number, cf_table_num, n_cf_table \
+                    = _cpl_field_info(nam_entry.name_out, nam_entry,
+                                      cf_names, cf_table_num, n_cf_table)
+                longname = cf_names[cf_table_number - 1].longname
 
         # See if remapping file needs creating
         l_rmp_create = False
