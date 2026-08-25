@@ -558,11 +558,17 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
     # Determine the abreviated ocean name used for the SNR<->JNR
     # coupling grids
     if 'OCN_grid' in run_info:
-        ocn_res = int(run_info['OCN_grid'].replace('orca', ''))
-        if ocn_res < 10:
-            ocn_abrev = 'o' + str(ocn_res)
-        else:
+        # While we've got Eric and Sarah's ORCA025 and ORCA075 grids, we need
+        # this hack - marc 25/8/26
+        if run_info['OCN_grid'].find('eric-orca') > -1:
+            ocn_res = int(run_info['OCN_grid'].replace('eric-orca', ''))
             ocn_abrev = str(ocn_res)
+        else:
+            ocn_res = int(run_info['OCN_grid'].replace('orca', ''))
+            if ocn_res < 10:
+                ocn_abrev = 'o' + str(ocn_res)
+            else:
+                ocn_abrev = str(ocn_res)
     else:
         # The problem is likely to be that this is a SNR<->JNR
         # coupling without an ocean, and so the ocean resolution
