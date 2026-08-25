@@ -32,7 +32,9 @@ OCEAN_RESOLS_PRE_NEMO4_2 = {'orca2': [182, 149],
 OCEAN_RESOLS_FROM_NEMO4_2 = {'orca2': [180, 148],
                              'orca1': [360, 331],
                              'orca075': [480, 350],
+                             'eric-orca075': [480, 350],
                              'orca025': [1440, 1020],
+                             'eric-orca025': [1440, 1020],
                              'orca12': [4320, 3058],
                              'orca36': [12958, 10849]}
 
@@ -88,7 +90,7 @@ def get_ocean_resol(nemo_name, nemo_nl_file, nemo_version, run_info):
         # Rather than read this file, assume resolution is declared.
         if grid_name not in run_info:
             sys.stderr.write('[FAIL] it is necessary to declare the ocean '
-                             'resolution by setting the %_RES environment '
+                             'resolution by setting the %s_RES environment '
                              'variable.' % nemo_name)
             sys.exit(error.NOT_DECLARE_OCN_RES)
         else:
