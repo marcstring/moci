@@ -277,8 +277,6 @@ def _cpl_field_info(name_out, nam_entry, cf_names, cf_table_num, n_cf_table):
         name_in_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.origin]
         name_out_comp = NAM_COMP_NAMES_OCN2OCN[nam_entry.dest]
         name_in = name_out.replace(name_in_comp, name_out_comp)
-        # tmp - marc
-        print("k. name_in=",name_in)
     else:
         # Coupling between an atmosphere and ocean executable
         name_in_comp = NAM_COMP_NAMES_ATM2OCN[nam_entry.origin]

@@ -243,7 +243,6 @@ def add_default_couplings(run_info, coupling_list):
         # Loop through the default entries
         for i_entry in i_default:
             nam_entry = coupling_list[i_entry]
-            print("f. nam_entry=",nam_entry)
             # Return a list of the fields normally coupled from this
             # source
             default_cpl = _determine_default_couplings(nam_entry.origin,

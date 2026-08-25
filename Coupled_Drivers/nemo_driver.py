@@ -894,16 +894,11 @@ def _sent_coupling_fields(nemo_envar, run_info):
             oasis_nml['oasis_ocn_send_nml'], run_info)
     
     # Create a list of fields sent from OCN
-    # tmp - marc
-    print("a. oasis_ocn_send=",oasis_nml['oasis_ocn_send_nml']['oasis_ocn_send'])
-    #
     import write_namcouple
     model_snd_list = \
         write_namcouple.add_to_cpl_list( \
         'OCN', False, 0,
         oasis_nml['oasis_ocn_send_nml']['oasis_ocn_send'])
-    # tmp - marc
-    print("i. model_snd_list=",model_snd_list)
 
     return run_info, model_snd_list
 

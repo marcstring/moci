@@ -79,7 +79,6 @@ def _setup_executable(common_env, nemo_envar):
     # do need to be read from namelist_bgc_cfc.
     history_obgc_nl = nemo_envar['history_nemo_nl'].replace('namelist_cfg',
                                                             'namelist_bgc_cfg')
-    print("history_obgc_nl=",history_obgc_nl)
     gl_first_step_match = 'nn_it000='
     gl_step_int_match = 'rn_dt='
     gl_last_step_match = 'nn_itend='
@@ -99,9 +98,6 @@ def _setup_executable(common_env, nemo_envar):
     _, obgc_step_int_val = common.exec_subproc(['grep', gl_step_int_match,
                                                 obgc_envar['OBGC_NL']])
     obgc_step_int = int(re.findall(r'.+=(\d*)', obgc_step_int_val)[0])
-
-    print("obgc_first_step,obgc_last_step,obgc_step_int=",
-          obgc_first_step,obgc_last_step,obgc_step_int)
 
     # Determine obgc_next_step and obgc_final_step
     if nemo_envar['restart_ctl'] == 0:

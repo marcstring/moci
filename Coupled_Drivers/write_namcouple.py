@@ -214,13 +214,11 @@ def add_to_cpl_list(origin, l_hybrid, n_cpl_freq, send_list_raw):
     mapping = None
     weighting = None
     model_snd_list = []
-    print("f. send_list_raw=",send_list_raw)
     if not isinstance(send_list_raw, list):
         send_list_raw = [send_list_raw]
 
     # Loop across the raw entries
     for cpl_entry_raw in send_list_raw:
-        print("g. cpl_entry_raw=",cpl_entry_raw)
         if cpl_entry_raw == 'default':
             # Entry will later be filled with the default options
             model_snd_list.append(

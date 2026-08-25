@@ -174,8 +174,6 @@ def _setup_rmp_dir(mct_envar, run_info):
             else:
                 core_dir_str = grid_name
         core_dir_str = mct_envar['RMP_DIR'] + '/' + core_dir_str
-        print("p. core_dir_str=",core_dir_str)
-        print("p. run_info=",run_info)
 
         # Find the core remapping directory and link the core
         # remapping files
@@ -319,10 +317,6 @@ def _sent_coupling_fields(mct_envar, run_info):
                     'JNR2OCN_freq': ['oasis_couple_freq_ao'],
                     'OCN2JNR_freq': ['oasis_couple_freq_oa']}
 
-    # tmp - marc
-    print("c. mct_envar=",mct_envar['COUPLING_COMPONENTS'])
-    print("c. run_info=",run_info)
-    
     # Read atmosphere data
     if 'um' in mct_envar['COUPLING_COMPONENTS']:
         # Check that SHARED exists
@@ -396,8 +390,6 @@ def _sent_coupling_fields(mct_envar, run_info):
                              'ocean\n')
             sys.exit(error.MISSING_OCN_DT)
 
-    print("d. run_info=",run_info)
-    
     return run_info
 
 
