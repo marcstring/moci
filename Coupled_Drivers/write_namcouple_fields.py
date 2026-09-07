@@ -436,11 +436,19 @@ def _write_grid_info(nam_file, ocn_abrev, nam_entry, seq,
         origin_grid = ATM2OCN_GRIDS[nam_entry.origin][nam_entry.grid]
         dest_grid = ATM2OCN_GRIDS[nam_entry.dest][nam_entry.grid]
         if nam_entry.origin == 'OCN':
-            origin_overlap = 2
+            if 'NEMO_VERSION' in run_info and \
+               int(run_info['NEMO_VERSION']) > 400:
+                origin_overlap = 0
+            else:
+                origin_overlap = 2
             dest_overlap = 0
         else:
             origin_overlap = 0
-            dest_overlap = 2
+            if 'NEMO_VERSION' in run_info and \
+               int(run_info['NEMO_VERSION']) > 400:
+                dest_overlap = 0
+            else:
+                dest_overlap = 2
     else:
         sys.stderr.write('[FAIL] unclear on mapping')
         sys.exit(error.UNCLEAR_MAPPING)
