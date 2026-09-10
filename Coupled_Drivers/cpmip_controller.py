@@ -28,6 +28,7 @@ import cpmip_nemo
 import cpmip_um
 import cpmip_utils
 import cpmip_xios
+import error
 import dr_env_lib.cpmip_def
 import dr_env_lib.env_lib
 
@@ -297,10 +298,13 @@ def _finalize_cpmip_controller(common_env):
             elif i_model == 'nemo':
                 allocated_nemo = pbs_l_nodes.pop(0) * plat_cores_per_node
                 if allocated_nemo == 0:
-                    # In hybrid resolution workflows, we set Jnr to have
-                    # zero resources when it is not on, so we need to
-                    # jump over this.
+                    # In hybrid resolution workflows, we can set both Snr and
+                    # Jnr to have zero resources when they are not on, so we
+                    # need to jump over them if so.
                     allocated_nemo = pbs_l_nodes.pop(0) * plat_cores_per_node
+                    if allocated_nemo == 0:
+                        allocated_nemo = pbs_l_nodes.pop(0) * \
+                            plat_cores_per_node
                 if allocated_nemo < nemo_cpus:
                     # As insufficient resources, assume model has another
                     # remainder node.
