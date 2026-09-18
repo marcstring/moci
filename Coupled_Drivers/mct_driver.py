@@ -308,7 +308,7 @@ def _sent_coupling_fields(mct_envar, run_info):
     # Dictionary for the coupling frequencies
     # (Note that for now, we're assuming that coupling frequencies
     # for JNR<->OCN are the same as ATM<->OCN)
-    couple_freqs = {'ATM2BCG_freq': ['oasis_couple_freq_ao'],
+    couple_freqs = {'ATM2BGC_freq': ['oasis_couple_freq_ao'],
                     'ATM2OCN_freq': ['oasis_couple_freq_ao'],
                     'ATM2JNR_freq': ['oasis_couple_freq_aj',
                                      'oasis_couple_freq_aj_stats'],
