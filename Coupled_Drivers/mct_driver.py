@@ -304,17 +304,20 @@ def _sent_coupling_fields(mct_envar, run_info):
     '''
 
     # Dictionary for the component names
-    component_names = {'um':'ATM', 'nemo':'OCN', 'jnr':'JNR', 'bgc':'BGC'}
+    component_names = {'um':'ATM', 'nemo':'OCN', 'jnr':'JNR', 'obgc':'BGC'}
     # Dictionary for the coupling frequencies
     # (Note that for now, we're assuming that coupling frequencies
     # for JNR<->OCN are the same as ATM<->OCN)
     couple_freqs = {'ATM2OCN_freq': ['oasis_couple_freq_ao'],
-                    'OCN2ATM_freq': ['oasis_couple_freq_oa'],
+                    'ATM2OCN_freq': ['oasis_couple_freq_ao'],
                     'ATM2JNR_freq': ['oasis_couple_freq_aj',
                                      'oasis_couple_freq_aj_stats'],
+                    'BGC2ATM_freq': ['oasis_couple_freq_oa'],
+                    'BGC2JNR_freq': ['oasis_couple_freq_oa'],
                     'JNR2ATM_freq': ['oasis_couple_freq_ja',
                                      'oasis_couple_freq_ja_stats'],
                     'JNR2OCN_freq': ['oasis_couple_freq_ao'],
+                    'OCN2ATM_freq': ['oasis_couple_freq_oa'],
                     'OCN2JNR_freq': ['oasis_couple_freq_oa']}
 
     # Read atmosphere data
@@ -328,7 +331,9 @@ def _sent_coupling_fields(mct_envar, run_info):
         shared_nml = f90nml.read(run_info['SHARED_FILE'])
         for component1 in mct_envar['COUPLING_COMPONENTS'].split():
             for component2 in mct_envar['COUPLING_COMPONENTS'].split():
-                if component2 != component1:
+                if component2 != component1 and \
+                   ( (component1 in ['um', 'jnr']) or
+                     (component2 in ['um', 'jnr']) ):
                     # Check component names exist
                     if not component1 in component_names or \
                        not component2 in component_names:
@@ -376,7 +381,7 @@ def _sent_coupling_fields(mct_envar, run_info):
         if 'OCN_dt' in run_info:
             if 'BGC_dt' in run_info and \
                run_info['OCN_dt'] != run_info['BGC_dt']:
-                sys.stderr.write('[FAIL] % mismatch between OCN dt, %d, and '
+                sys.stderr.write('[FAIL] mismatch between OCN dt, %d, and '
                                  'BGC dt, %d, .\n' %
                                  (run_info['OCN_dt'], run_info['BGC_dt']))
                 sys.exit(error.MISMATCH_OCN_BGC_DT)
@@ -386,7 +391,7 @@ def _sent_coupling_fields(mct_envar, run_info):
                 run_info['BGC2OCN_freq'] = []
                 run_info['BGC2OCN_freq'].append(run_info['OCN_dt'])
         else:
-            sys.stderr.write('[FAIL] % failed to find timestep for physical '
+            sys.stderr.write('[FAIL] failed to find timestep for physical '
                              'ocean\n')
             sys.exit(error.MISSING_OCN_DT)
 
