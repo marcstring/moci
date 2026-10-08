@@ -36,7 +36,9 @@ ATM2OCN_GRIDS = {'ATM':{'r':'riv3', 's':'scal', 't':'atm3',
                  'JNR':{'r':'riv3', 's':'scal', 't':'jtm3',
                         'u':'jum3', 'v':'jvm3'},
                  'OCN':{'r':'riv3', 's':'scal', 't':'tor1',
-                        'u':'uor1', 'v':'vor1'}}
+                        'u':'uor1', 'v':'vor1'},
+                 'BGC':{'r':'riv3', 's':'scal', 't':'tbr1',
+                        'u':'ubr1', 'v':'vbr1'}}
 
 # The grid names for a OCN<->BGC coupling
 OCN2BGC_GRIDS = {'OCN':{'t':'to3s', 'u':'uo3s', 'v':'vo3s', 'w':'wo3s'},

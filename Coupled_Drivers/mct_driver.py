@@ -306,8 +306,8 @@ def _sent_coupling_fields(mct_envar, run_info):
     # Dictionary for the component names
     component_names = {'um':'ATM', 'nemo':'OCN', 'jnr':'JNR', 'obgc':'BGC'}
     # Dictionary for the coupling frequencies
-    # (Note that for now, we're assuming that coupling frequencies
-    # for JNR<->OCN are the same as ATM<->OCN)
+    # (Note that for now, we're assuming that the ATM<->OCN coupling
+    # frequencies also apply to JNR<->OCN, ATM<->BGC and JNR<->BGC. 
     couple_freqs = {'ATM2BGC_freq': ['oasis_couple_freq_ao'],
                     'ATM2OCN_freq': ['oasis_couple_freq_ao'],
                     'ATM2JNR_freq': ['oasis_couple_freq_aj',
@@ -316,6 +316,7 @@ def _sent_coupling_fields(mct_envar, run_info):
                     'BGC2JNR_freq': ['oasis_couple_freq_oa'],
                     'JNR2ATM_freq': ['oasis_couple_freq_ja',
                                      'oasis_couple_freq_ja_stats'],
+                    'JNR2BGC_freq': ['oasis_couple_freq_ao'],
                     'JNR2OCN_freq': ['oasis_couple_freq_ao'],
                     'OCN2ATM_freq': ['oasis_couple_freq_oa'],
                     'OCN2JNR_freq': ['oasis_couple_freq_oa']}
