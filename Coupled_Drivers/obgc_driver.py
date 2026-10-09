@@ -23,6 +23,7 @@ import os
 import sys
 import shutil
 import common
+import f90nml
 import error
 import nemo_driver
 import dr_env_lib.obgc_def
@@ -193,7 +194,26 @@ def _sent_coupling_fields(obgc_envar, run_info):
     # Add a 'b' to BGC grid name to distinguish it from the OCN grid.
     run_info['BGC_grid'] = run_info['BGC_grid'] + 'b'
 
-    model_snd_list = None
+    # Read the namelist
+    oasis_nml = f90nml.read('OASIS_BGC_SEND')
+
+    # Check we have the expected information
+    if 'oasis_bgc_send_nml' not in oasis_nml:
+        sys.stderr.write('[FAIL] namelist oasis_bgc_send_nml is '
+                         'missing from OASIS_BGC_SEND.\n')
+        sys.exit(error.MISSING_OASIS_BGC_SEND_NML)
+    if 'oasis_bgc_send' not in oasis_nml['oasis_bgc_send_nml']:
+        sys.stderr.write('[FAIL] entry oasis_bgc_send is missing '
+                         'from namelist oasis_bgc_send_nml in '
+                         'OASIS_BGC_SEND.\n')
+        sys.exit(error.MISSING_OASIS_BGC_SEND)
+
+    # Create a list of fields sent from BGC
+    import write_namcouple
+    model_snd_list = \
+        write_namcouple.add_to_cpl_list( \
+        'BGC', False, 0,
+        oasis_nml['oasis_bgc_send_nml']['oasis_bgc_send'])
 
     return run_info, model_snd_list
     

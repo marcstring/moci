@@ -134,8 +134,11 @@ UNRECOGNISED_LEVEL = 814
 # Not found the stash code in stashmaster_info
 NOT_FOUND_STASH_CODE = 815
 
+# Problem with mapping
+UNCLEAR_MAPPING = 816
+
 # Unable to create remapping file for mapping type
-MISSING_RMP_MAPPING = 816
+MISSING_RMP_MAPPING = 817
 
 # Ocean resolution for Snr<->Jnr coupling is not specified
 NO_OCN_RESOL = 818
@@ -278,8 +281,11 @@ MISSING_OCN_RECEIVE_COMP = 876
 # Mismatch in timesteps for physical ocean and biogeochemistry
 MISMATCH_OCN_BGC_DT = 880
 
+# Missing namelist oasis_bgc_send_nml from OASIS_BGC_SEND
+MISSING_OASIS_BGC_SEND_NML = 881
+
 # Missing entry oasis_bgc_send from namelist oasis_bgc_send_nml
-MISSING_OASIS_BGC_SEND = 881
+MISSING_OASIS_BGC_SEND = 882
 
 # CPMIP errors
 # Problem reading resources from the PBS arguments

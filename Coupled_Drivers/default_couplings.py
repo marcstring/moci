@@ -142,7 +142,7 @@ def _determine_default_couplings(origin, ocean_nml, run_info):
             exchange_couplings = {**ATM2OCN_COUPLINGS,
                                   **ATM2OCN_COUPLINGS_NEMO4}
         destinations = ["OCN"]
-        weight_ref = 300
+        weight_ref = 800
     elif origin == "OCN":
         # Do we want ocean->atmosphere couplings
         if 'toyatm' in run_info['exec_list']:
@@ -152,7 +152,7 @@ def _determine_default_couplings(origin, ocean_nml, run_info):
                 destinations = ["ATM", "JNR"]
             else:
                 destinations = ["ATM"]
-            weight_ref = 100
+            weight_ref = 200
         elif 'bgc' in run_info['exec_list']:
             # There currently no default couplings between physical ocean
             # and separate biogeochemistry executable
