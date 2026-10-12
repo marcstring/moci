@@ -25,7 +25,7 @@ import write_cf_name_table
 # The part of name used in namcouple to identify the component for
 # atmosphere to ocean couplings
 NAM_COMP_NAMES_ATM2OCN = {'ATM':'atm', 'JNR':'jnr',
-                          'OCN':'model01_O', 'BGC':'model02_B'}
+                          'OCN':'model01_O', 'BGC':'model01_B'}
 
 # The part of name used in namcouple to identify the component for
 # ocean to ocean couplings
