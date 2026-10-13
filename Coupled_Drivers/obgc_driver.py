@@ -208,12 +208,16 @@ def _sent_coupling_fields(obgc_envar, run_info):
                          'OASIS_BGC_SEND.\n')
         sys.exit(error.MISSING_OASIS_BGC_SEND)
 
-    # Create a list of fields sent from BGC
-    import write_namcouple
-    model_snd_list = \
-        write_namcouple.add_to_cpl_list( \
-        'BGC', False, 0,
-        oasis_nml['oasis_bgc_send_nml']['oasis_bgc_send'])
+    # Check that we have some fields in here
+    if oasis_nml['oasis_bgc_send_nml']['oasis_bgc_send']:
+        # Create a list of fields sent from BGC
+        import write_namcouple
+        model_snd_list = \
+            write_namcouple.add_to_cpl_list(
+                'BGC', False, 0,
+                oasis_nml['oasis_bgc_send_nml']['oasis_bgc_send'])
+    else:
+        model_snd_list = None
 
     return run_info, model_snd_list
     
