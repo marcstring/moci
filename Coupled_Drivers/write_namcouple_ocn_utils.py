@@ -26,14 +26,14 @@ import error
 # Ocean resolutions
 OCEAN_RESOLS_PRE_NEMO4_2 = {'orca2': [182, 149],
                             'orca1': [362, 332],
-                            'orca025': [1442, 1021],
+                            'orca025': [1442, 1207],
                             'orca12': [4322, 3059],
                             'orca36': [12960, 10850]}
 OCEAN_RESOLS_FROM_NEMO4_2 = {'orca2': [180, 148],
                              'orca1': [360, 331],
                              'orca075': [480, 350],
                              'eric-orca075': [480, 350],
-                             'orca025': [1440, 1020],
+                             'orca025': [1440, 1206],
                              'eric-orca025': [1440, 1020],
                              'orca12': [4320, 3058],
                              'orca36': [12958, 10849]}
