@@ -309,7 +309,8 @@ def _cpl_field_info(name_out, nam_entry, cf_names, cf_table_num, n_cf_table):
 
     return name_in, cf_names, cf_table_number, cf_table_num, n_cf_table
 
-def _write_transdef(nam_file, nam_entry, cpl_freq, n_field, longname):
+def _write_transdef(nam_file, nam_entry, cpl_freq,
+                    n_field, longname, transdef_hist):
     '''
     Write the TRANSDEF information
     '''
@@ -347,9 +348,26 @@ def _write_transdef(nam_file, nam_entry, cpl_freq, n_field, longname):
         nam_file.write(', %d levels\n' % nam_entry.nlev)
     nam_file.write('#---------------------------------------------------\n')
 
-    # TRANSDEF line is only required if a UM is involved.
-    if (nam_entry.origin in ('ATM', 'JNR')) or \
-       (nam_entry.dest in ('ATM', 'JNR')):
+    # The TRANSDEF line is for the UM, and the UM is agnostic to fields
+    # coming from either OCN or BGC. Code already exists for fields
+    # coming and going from OCN so use this in TRANSDEF line for both
+    # OCN and BGC.
+    if nam_entry.origin == 'BGC':
+        origin = 'OCN'
+    else:
+        origin = nam_entry.origin
+    if nam_entry.dest == 'BGC':
+        dest = 'OCN'
+    else:
+        dest = nam_entry.dest
+
+    # TRANSDEF line is only required if a UM is involved and hasn't been
+    # define bfore (it's possible to for ATM to send fields to both OCN
+    # and BGC).            
+    transdef_entry = nam_entry.name_out + '-' + origin + '-' + dest 
+    if ( ( (nam_entry.origin in ('ATM', 'JNR')) or
+           (nam_entry.dest in ('ATM', 'JNR')) ) and
+         (transdef_entry not in transdef_hist) ):
 
         # For scalar field the grid is not specified
         if nam_entry.mapping == 'OneVal':
@@ -359,19 +377,6 @@ def _write_transdef(nam_file, nam_entry, cpl_freq, n_field, longname):
         else:
             grid = nam_entry.grid.upper()
 
-        # The TRANSDEF line is for the UM, and the UM is agnostic to fields
-        # coming from either OCN or BGC. Code already exists for fields
-        # coming and going from OCN so use this in TRANSDEF line for both
-        # OCN and BGC.
-        if nam_entry.origin == 'BGC':
-            origin = 'OCN'
-        else:
-            origin = nam_entry.origin
-        if nam_entry.dest == 'BGC':
-            dest = 'OCN'
-        else:
-            dest = nam_entry.dest
-
         # TRANSDEF line
         nam_file.write('# TRANSDEF: %s%s %s%s %d %d ' %
                        (origin, grid, dest, grid, n_field, nam_entry.field_id))
@@ -380,6 +385,11 @@ def _write_transdef(nam_file, nam_entry, cpl_freq, n_field, longname):
             # for the ocean is not given here.
             nam_file.write('%d ' % nam_entry.mapping_type)
         nam_file.write('###\n')
+
+        # Store TRANSDEF entry so it won't be repeated
+        transdef_hist[transdef_entry] = True
+
+    return transdef_hist
 
 def _write_main_line(nam_file, nam_entry, cpl_freq, name_in,
                      cf_table_number, n_trans, cpl_restart_file,
@@ -614,6 +624,7 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
     n_cf_table = 0
     cpl_restart_file = 'oasis_restart.nc'
     stashmaster_info = None
+    transdef_hist = {}
 
     # Loop across all the coupling
     for nam_entry in coupling_list:
@@ -709,7 +720,8 @@ def write_namcouple_fields(nam_file, run_info, coupling_list):
             n_trans = 2
 
         # Write the TRANSDEF information to namcouple
-        _write_transdef(nam_file, nam_entry, cpl_freq, n_field, longname)
+        transdef_hist = _write_transdef(nam_file, nam_entry, cpl_freq,
+                                        n_field, longname, transdef_hist)
 
         # Write the line with field names and coupling frequency
         _write_main_line(nam_file, nam_entry, cpl_freq, name_in,
