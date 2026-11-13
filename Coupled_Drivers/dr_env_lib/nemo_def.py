@@ -31,6 +31,7 @@ NEMO_ENVIRONMENT_VARS_INITIAL = {
     'NEMO_NPROC': {'desc': 'Number of NEMO processors'},
     'NEMO_IPROC': {'desc': 'Number of NEMO processors in the i direction'},
     'NEMO_JPROC': {'desc': 'Number of NEMO processors in the j direction'},
+    'NEMO_OASIS_NAME' : {'default_val': 'toyoce'},
     'NEMO_VERSION': {},
     'OCEAN_LINK': {'default_val': 'ocean.exe'},
     'OCN_RES': {'default_val': ''},

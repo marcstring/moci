@@ -21,6 +21,7 @@ DESCRIPTION
 
 XIOS_ENVIRONMENT_VARS_INITIAL = {
     'COUPLING_COMPONENTS' : {'default_val': ''},
+    'NEMO_OASIS_NAME' : {'default_val': 'toyoce'},
     'XIOS_NPROC': {'default_val': '0',
                    'triggers': [[lambda my_val: my_val != '0',
                                  ['XIOS_LINK', 'ROSE_LAUNCHER_PREOPTS_XIOS',

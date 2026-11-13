@@ -64,7 +64,7 @@ def _update_iodef(
         # Update the list of coupled components
         elif '<!' not in line and 'oasis_codes_id' in line:
             if oasis_components.strip():
-                line = '<variable id="oasis_codes_id"   type="string" >' \
+                line = '<variable id="oasis_codes_id"   type="string">' \
                    + oasis_components+'</variable>'
             else:
                 line =  '<!-- oasis_codes_id not required -->'
@@ -80,17 +80,20 @@ def _setup_coupling_components(xios_envar):
     '''
     Set up the coupling components for the iodef file. This is less
     straightforward than you might imagine, since the names of the componenets
-    are hard coded in the component source code. Nemo becomes toyoce and
-    lfric is lfric. These become a comma separated string.
+    are hard coded in the component source code. Nemo becomes 'toyoce' or
+    argument for environment variable 'NEMO_OASIS_NAME' and lfric is 'lfric'.
+    These become a comma separated string.
     We use the COUPLING_COMPONENTS environment variable to determine this,
-    however it is borrowed from MCT, do we must delete it from the xios_envar
-    container after use
+    however it is borrowed from MCT, so we must delete it from the xios_envar
+    container after use.
     '''
     oasis_components = []
     if 'lfric' in xios_envar['COUPLING_COMPONENTS']:
         oasis_components.append('lfric')
     if 'nemo' in xios_envar['COUPLING_COMPONENTS']:
-        oasis_components.append('toyoce')
+        oasis_components.append( xios_envar['NEMO_OASIS_NAME'] )
+    if 'obgc' in xios_envar['COUPLING_COMPONENTS']:
+        oasis_components.append('bgc')
     xios_envar.remove('COUPLING_COMPONENTS')
     oasis_components = ','.join(oasis_components)
     return oasis_components, xios_envar
@@ -125,19 +128,11 @@ def _setup_executable(common_env):
     # Copy the custom IO file if required
     _copy_iodef_custom(xios_envar)
 
-    # We don't currently want to modify the iodef.xml if doing the
-    # the model coarsening - marc 5/4/23
-    if 'obgc' in common_env['models']:
-        # This would normally be done in _setup_coupling_components
-        xios_envar.remove('COUPLING_COMPONENTS')
-    else:
-        # I think this needs removing - marc 20/12/23
-        #xios_envar.remove('COUPLING_COMPONENTS')
-        # Get the list of coupled componenets
-        oasis_components, xios_envar = _setup_coupling_components(xios_envar)
-        # Update the iodef file
-        _update_iodef(using_server, using_coupler, oasis_components,
-                      xios_envar['IODEF_FILENAME'])
+    # Get the list of coupled componenets
+    oasis_components, xios_envar = _setup_coupling_components(xios_envar)
+    # Update the iodef file
+    _update_iodef(using_server, using_coupler, oasis_components,
+                  xios_envar['IODEF_FILENAME'])
 
     return xios_envar
 

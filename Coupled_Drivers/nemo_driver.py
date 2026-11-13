@@ -851,7 +851,7 @@ def _sent_coupling_fields(nemo_envar, run_info):
     # Add toyatm to our list of executables
     if not 'exec_list' in run_info:
         run_info['exec_list'] = []
-    run_info['exec_list'].append('toyoce')
+    run_info['exec_list'].append( nemo_envar['NEMO_OASIS_NAME'] )
 
     # Store ocean resolution if it is provided
     if nemo_envar['OCN_RES']:
@@ -993,6 +993,8 @@ def run_driver(common_env, mode, run_info):
         else:
             run_info, model_snd_list = \
                 _sent_coupling_fields(exe_envar, run_info)
+        # 'NEMO_OASIS_NAME' is needed later by xios_driver.py
+        exe_envar.remove('NEMO_OASIS_NAME')
     elif mode == 'finalize':
         _finalize_executable(common_env)
         exe_envar = None
